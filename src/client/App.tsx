@@ -1,23 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Send, MessageCircle, X } from 'lucide-react';
 
-const mockSocket = {
-  on: (event, callback) => {
-    if (event === 'newMessage') {
-      const demoMessages = [
-        { id: 1, username: 'Player123', message: 'OMG choose Minnesota!', timestamp: Date.now() },
-        { id: 2, username: 'GameFan', message: 'NO way, Chicago is better', timestamp: Date.now() + 1000 },
-      ];
-      setTimeout(() => callback(demoMessages[0]), 3000);
-      setTimeout(() => callback(demoMessages[1]), 6000);
-    }
-  },
-  emit: (event, data) => {
-    console.log('Socket emit:', event, data);
-  },
-  off: () => {}
-};
-
 const Scene = ({ 
   prompt, 
   choices, 
@@ -65,10 +48,7 @@ const Scene = ({
   return null;
 };
 
-const LiveChat = ({ sceneId, isOpen, onClose }) => {
-  const [messages, setMessages] = useState([
-    { id: 0, username: 'System', message: 'Welcome to the chat! Talk to other players here 💬', timestamp: Date.now(), isSystem: true }
-  ]);
+const LiveChat = ({ sceneId, isOpen, onClose, persistentMessages, onMessagesUpdate }) => {
   const [inputMessage, setInputMessage] = useState('');
   const [username, setUsername] = useState('');
   const [hasSetUsername, setHasSetUsername] = useState(false);
@@ -80,44 +60,34 @@ const LiveChat = ({ sceneId, isOpen, onClose }) => {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
-
-  useEffect(() => {
-    mockSocket.on('newMessage', (newMsg) => {
-      setMessages(prev => [...prev, newMsg]);
-    });
-
-    return () => {
-      mockSocket.off('newMessage');
-    };
-  }, []);
+  }, [persistentMessages]);
 
   const handleSetUsername = () => {
     if (username.trim()) {
       setHasSetUsername(true);
-      const welcomeMsg = {
-        id: Date.now(),
+      // Add join message to persistent messages
+      const joinMessage = {
+        id: Date.now() + Math.random(),
         username: 'System',
         message: `${username} joined the chat!`,
         timestamp: Date.now(),
         isSystem: true
       };
-      setMessages(prev => [...prev, welcomeMsg]);
+      onMessagesUpdate(prev => [...prev, joinMessage]);
     }
   };
 
   const handleSendMessage = () => {
     if (inputMessage.trim() && hasSetUsername) {
       const newMessage = {
-        id: Date.now(),
+        id: Date.now() + Math.random(),
         username: username,
         message: inputMessage,
         timestamp: Date.now(),
         isSystem: false
       };
       
-      setMessages(prev => [...prev, newMessage]);
-      mockSocket.emit('sendMessage', newMessage);
+      onMessagesUpdate(prev => [...prev, newMessage]);
       setInputMessage('');
     }
   };
@@ -142,7 +112,7 @@ const LiveChat = ({ sceneId, isOpen, onClose }) => {
           <MessageCircle className="w-5 h-5" />
           <span className="font-bold">Live Chat</span>
           <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">
-            {messages.filter(m => !m.isSystem).length} msgs
+            {persistentMessages.filter(m => !m.isSystem).length} msgs
           </span>
         </div>
         <button
@@ -177,7 +147,7 @@ const LiveChat = ({ sceneId, isOpen, onClose }) => {
       )}
 
       <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
-        {messages.map((msg) => (
+        {persistentMessages.map((msg) => (
           <div
             key={msg.id}
             className={`${
@@ -246,6 +216,9 @@ export default function App() {
   const [showResults, setShowResults] = useState(false);
   const [totalVoters, setTotalVoters] = useState(0);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [persistentMessages, setPersistentMessages] = useState([
+    { id: 0, username: 'System', message: 'Welcome to the chat! Talk to other players here 💬', timestamp: Date.now(), isSystem: true }
+  ]);
 
   useEffect(() => {
     if (sceneId === 'welcome' || showResults) return;
@@ -548,10 +521,13 @@ export default function App() {
           sceneId={sceneId} 
           isOpen={isChatOpen}
           onClose={() => setIsChatOpen(false)}
+          persistentMessages={persistentMessages}
+          onMessagesUpdate={setPersistentMessages}
         />
       </>
     );
   }
+
 
   if (showResults) {
     const currentChoices = getCurrentChoices();
@@ -621,6 +597,8 @@ export default function App() {
           sceneId={sceneId} 
           isOpen={isChatOpen}
           onClose={() => setIsChatOpen(false)}
+          persistentMessages={persistentMessages}
+          onMessagesUpdate={setPersistentMessages}
         />
       </>
     );
@@ -727,6 +705,8 @@ export default function App() {
         sceneId={sceneId} 
         isOpen={isChatOpen}
         onClose={() => setIsChatOpen(false)}
+        persistentMessages={persistentMessages}
+        onMessagesUpdate={setPersistentMessages}
       />
     </>
   );
