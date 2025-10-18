@@ -31,10 +31,17 @@ const Scene = ({
     return (
       <div className="bg-gradient-to-br from-white via-blue-50 to-purple-50 rounded-2xl shadow-2xl p-6 border-2 border-blue-200">
         {npc && (
-          <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border-l-4 border-indigo-400 p-4 mb-4 rounded-lg shadow-md">
-            <div className="text-sm text-gray-600 font-semibold">{npc.name}</div>
-            <div className="text-xs text-gray-500 italic">{npc.bio}</div>
-            <div className="mt-2 text-md text-gray-800">💬 {npc.reaction}</div>
+          <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border-l-4 border-indigo-400 p-4 mb-4 rounded-lg shadow-md flex items-start gap-3">
+            <img
+              src={npc.image}
+              alt={`${npc.name} avatar`}
+              className="w-12 h-12 rounded-full border-2 border-indigo-300 flex-shrink-0 object-cover"
+            />
+            <div className="flex-1">
+              <div className="text-sm text-gray-600 font-semibold">{npc.name}</div>
+              <div className="text-xs text-gray-500 italic">{npc.bio}</div>
+              <div className="mt-2 text-md text-gray-800">💬 {npc.reaction}</div>
+            </div>
           </div>
         )}
         
@@ -65,7 +72,6 @@ const LiveChat = ({ sceneId, isOpen, onClose, persistentMessages, onMessagesUpda
   const handleSetUsername = () => {
     if (username.trim()) {
       setHasSetUsername(true);
-      // Add join message to persistent messages
       const joinMessage = {
         id: Date.now() + Math.random(),
         username: 'System',
@@ -317,11 +323,33 @@ export default function App() {
   };
 
   const getSceneImage = () => {
-    if (sceneId === 'scene1') return '/assets/cassey-cracked-phone.png';
-    if (sceneId === 'scene2_minnesota' || sceneId.includes('minnesota')) return '/assets/cassey-boyfriend.png';
-    if (sceneId === 'scene2_connecticut' || sceneId.includes('connecticut')) return '/assets/cassey-neutral.png';
-    if (sceneId === 'scene2_chicago' || sceneId.includes('chicago')) return '/assets/cassey-bold.png';
-    return '/assets/cassey-neutral.png';
+    // Map each scene to its specific image with EXACT filenames
+    const sceneImages = {
+      'scene1': '/assets/Cassey.jpg',
+      'scene2_minnesota': '/assets/scene2_minnesota 2.png',
+      'scene2_connecticut': '/assets/scene2_connecticut 2.png',
+      'scene2_chicago': '/assets/scene2_chicago 2.png',
+      'scene3_minnesota_stay': '/assets/scene3_minnesota_stay 2.png',
+      'scene3_minnesota_leave': '/assets/scene3_minnesota_leave 2.png',
+      'scene3_connecticut_bake': '/assets/scene3_connecticut_bake 2.png',
+      'scene3_connecticut_escape': '/assets/scene3_connecticut_escape 2.png',
+      'scene3_chicago_pitch': '/assets/scene3_chicago_pitch 2.png',
+      'scene3_chicago_grad': '/assets/scene3_chicago_grad 2.png',
+      'scene4_minnesota_stay_therapy': '/assets/scene4_minnesota_stay_therapy 2.png',
+      'scene4_minnesota_stay_business': '/assets/scene4_minnesota_stay_business 2.png',
+      'scene4_minnesota_leave_apartment': '/assets/scene4_minnesota_leave_apartment 2.png',
+      'scene4_minnesota_leave_roommate': '/assets/scene4_minnesota_leave_apartment 2.png',
+      'scene4_connecticut_bake_recipe': '/assets/scene4_connecticut_bake_recipe 2.png',
+      'scene4_connecticut_bake_manager': '/assets/scene4_connecticut_bake_manager 2.png',
+      'scene4_connecticut_escape_road': '/assets/scene4_connecticut_escape_road 2.png',
+      'scene4_connecticut_escape_friend': '/assets/scene4_connecticut_escape_road 2.png',
+      'scene4_chicago_pitch_viral': '/assets/scene4_chicago_pitch_fired.png',
+      'scene4_chicago_pitch_fired': '/assets/scene4_chicago_pitch_fired.png',
+      'scene4_chicago_grad_bootcamp': '/assets/scene4_chicago_grad_pivot.png',
+      'scene4_chicago_grad_pivot': '/assets/scene4_chicago_grad_pivot.png',
+    };
+    
+    return sceneImages[sceneId] || '/assets/Cassey.jpg';
   };
 
   const getCurrentPrompt = () => {
@@ -354,12 +382,42 @@ export default function App() {
 
   const getCurrentNPC = () => {
     const npcs = {
-      scene2_minnesota: { name: "Zeke", bio: "Pothead boyfriend, aspiring DJ, allergic to responsibility", reaction: "Yo babe, I forgot to pay rent again. Can you cover it again?" },
-      scene2_connecticut: { name: "Mom", bio: "Bakery owner, emotionally manipulative, frosting perfectionist", reaction: "Your posture is terrible. Customers can smell weakness." },
-      scene2_chicago: { name: "Editor", bio: "Grizzled newsroom vet, drinks cold brew and hard bagels", reaction: "Kid, you're lucky we even hired you. Now fix that tabloid piece." },
-      scene3_minnesota_stay: { name: "Zeke", bio: "Still hasn't learned what a vacuum is", reaction: "Babe, I signed us up for therapy! ...With a YouTube life coach." },
-      scene3_connecticut_bake: { name: "Mom", bio: "Discovered TikTok, thinks she invented social media", reaction: "Why are YOU getting likes? I taught you everything you know!" },
-      scene3_chicago_pitch: { name: "Editor", bio: "Actually impressed but won't admit it", reaction: "Fine. It's good. Don't let it go to your head, temp." },
+      scene2_minnesota: { 
+        name: "Zeke", 
+        bio: "Pothead boyfriend, aspiring DJ, allergic to responsibility", 
+        reaction: "Yo babe, I forgot to pay rent again. Can you cover it again?",
+        image: "/assets/Zeke.jpg"
+      },
+      scene2_connecticut: { 
+        name: "Mom", 
+        bio: "Bakery owner, emotionally manipulative, frosting perfectionist", 
+        reaction: "Your posture is terrible. Customers can smell weakness.",
+        image: "/assets/Mom.jpg"
+      },
+      scene2_chicago: { 
+        name: "Editor", 
+        bio: "Grizzled newsroom vet, drinks cold brew and hard bagels", 
+        reaction: "Kid, you're lucky we even hired you. Now fix that tabloid piece.",
+        image: "/assets/Editor.jpg"
+      },
+      scene3_minnesota_stay: { 
+        name: "Zeke", 
+        bio: "Still hasn't learned what a vacuum is", 
+        reaction: "Babe, I signed us up for therapy! ...With a YouTube life coach.",
+        image: "/assets/Zeke.jpg"
+      },
+      scene3_connecticut_bake: { 
+        name: "Mom", 
+        bio: "Discovered TikTok, thinks she invented social media", 
+        reaction: "Why are YOU getting likes! I taught you everything you know!",
+        image: "/assets/Mom.jpg"
+      },
+      scene3_chicago_pitch: { 
+        name: "Editor", 
+        bio: "Actually impressed but won't admit it", 
+        reaction: "Fine. It's good. Don't let it go to your head, temp.",
+        image: "/assets/Editor.jpg"
+      },
     };
     return npcs[sceneId];
   };
@@ -528,7 +586,6 @@ export default function App() {
     );
   }
 
-
   if (showResults) {
     const currentChoices = getCurrentChoices();
     return (
@@ -680,10 +737,11 @@ export default function App() {
 
             <div className="flex items-start">
               <div className="bg-white rounded-2xl p-4 shadow-2xl animate-fadeIn w-full h-[800px] flex items-center justify-center">
-                <div className="text-center text-gray-400">
-                  <div className="text-6xl mb-4">📸</div>
-                  <p className="text-sm">Image: {getSceneImage()}</p>
-                </div>
+                <img
+                  src={getSceneImage()}
+                  alt="Scene image"
+                  className="max-w-full max-h-full object-contain rounded-lg"
+                />
               </div>
             </div>
           </div>
