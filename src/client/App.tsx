@@ -1,57 +1,115 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Scene } from './Scene';
 
 export const App = () => {
   const [sceneId, setSceneId] = useState('welcome');
   const [journal, setJournal] = useState<string[]>([]);
+  const [timeLeft, setTimeLeft] = useState(60);
+  const [hasVoted, setHasVoted] = useState(false);
+  const [votes, setVotes] = useState<Record<string, number>>({});
+  const [showResults, setShowResults] = useState(false);
+  const [totalVoters, setTotalVoters] = useState(0);
+
+  // Timer countdown
+  useEffect(() => {
+    if (sceneId === 'welcome' || showResults) return;
+    
+    if (timeLeft > 0 && !hasVoted) {
+      const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
+      return () => clearTimeout(timer);
+    } else if (timeLeft === 0 && !showResults) {
+      // Time's up - show results
+      setShowResults(true);
+    }
+  }, [timeLeft, hasVoted, showResults, sceneId]);
 
   const handleChoice = (outcome: string) => {
-    let nextScene = '';
-    
     // From welcome to scene1
     if (sceneId === 'welcome') {
-      nextScene = 'scene1';
-      setSceneId(nextScene);
+      setSceneId('scene1');
+      setTimeLeft(60);
+      setHasVoted(false);
+      setShowResults(false);
       return;
     }
-    
-    // Determine next scene based on current scene and outcome
+
+    // Record vote
+    if (!hasVoted) {
+      setHasVoted(true);
+      const currentChoices = getCurrentChoices();
+      const initialVotes: Record<string, number> = {};
+      currentChoices.forEach(choice => {
+        initialVotes[choice.outcome] = 0;
+      });
+      
+      // Simulate other users voting (for demo purposes)
+      const simulatedVotes = { ...initialVotes };
+      currentChoices.forEach(choice => {
+        simulatedVotes[choice.outcome] = Math.floor(Math.random() * 15) + 1;
+      });
+      simulatedVotes[outcome] += 1; // Add current user's vote
+      
+      const total = Object.values(simulatedVotes).reduce((a, b) => a + b, 0);
+      setVotes(simulatedVotes);
+      setTotalVoters(total);
+      setShowResults(true);
+    }
+  };
+
+  const handleNextScene = () => {
+    // Determine next scene based on majority vote
+    let nextScene = '';
+    let winningOutcome = '';
+    let maxVotes = 0;
+
+    Object.entries(votes).forEach(([outcome, count]) => {
+      if (count > maxVotes) {
+        maxVotes = count;
+        winningOutcome = outcome;
+      }
+    });
+
     if (sceneId === 'scene1') {
-      nextScene = 'scene2_' + outcome;
+      nextScene = 'scene2_' + winningOutcome;
     } else if (sceneId.startsWith('scene2_')) {
-      nextScene = 'scene3_' + outcome;
+      nextScene = 'scene3_' + winningOutcome;
     } else if (sceneId.startsWith('scene3_')) {
-      nextScene = 'scene4_' + outcome;
+      nextScene = 'scene4_' + winningOutcome;
     }
 
     const journalEntries: Record<string, string> = {
-      minnesota: "I chose love over logic. I hope he's worth it.",
-      connecticut: "Back to the bakery. I hope no one notices the bruises.",
-      chicago: "32k and a broken heater. But it's mine.",
-      minnesota_stay: "I cleaned the mess. Maybe I can fix this.",
-      minnesota_leave: "I packed my bag. I'm done being someone's excuse.",
-      connecticut_bake: "I baked quietly. I'm good at disappearing.",
-      connecticut_escape: "I left a note on the flour sack. I'm not coming back.",
-      chicago_pitch: "I pitched a story. They laughed. I wrote it anyway.",
-      chicago_grad: "I applied to a python course. Journalism can wait.",
+      minnesota: "We chose love over logic. Hope he's worth it.",
+      connecticut: "Back to the bakery. Hope no one notices the bruises.",
+      chicago: "32k and a broken heater. But it's ours.",
+      minnesota_stay: "We cleaned the mess. Maybe we can fix this.",
+      minnesota_leave: "We packed our bags. Done being someone's excuse.",
+      connecticut_bake: "We baked quietly. Good at disappearing.",
+      connecticut_escape: "We left a note on the flour sack. Not coming back.",
+      chicago_pitch: "We pitched a story. They laughed. We wrote it anyway.",
+      chicago_grad: "We applied to a python course. Journalism can wait.",
       minnesota_stay_therapy: "We went to couples therapy. The therapist fell asleep.",
-      minnesota_stay_business: "I started an Etsy shop selling 'I survived my boyfriend' mugs.",
-      minnesota_leave_apartment: "Studio apartment, no roommates. Just me and my anxiety.",
-      minnesota_leave_roommate: "My roommate collects taxidermy. At least they pay rent on time.",
-      connecticut_bake_recipe: "I created a viral TikTok recipe. Mom says I'm 'exploiting the family.'",
-      connecticut_bake_manager: "I'm the assistant manager now. Mom still corrects my piping technique.",
+      minnesota_stay_business: "We started an Etsy shop selling 'I survived my boyfriend' mugs.",
+      minnesota_leave_apartment: "Studio apartment, no roommates. Just us and our anxiety.",
+      minnesota_leave_roommate: "Our roommate collects taxidermy. At least they pay rent on time.",
+      connecticut_bake_recipe: "We created a viral TikTok recipe. Mom says we're 'exploiting the family.'",
+      connecticut_bake_manager: "We're the assistant manager now. Mom still corrects our piping technique.",
       connecticut_escape_road: "Road trip with $800 and a dream. The check engine light is on.",
       connecticut_escape_friend: "Crashing on Sarah's couch. She has 3 cats and questionable boundaries.",
-      chicago_pitch_viral: "My story went viral. My boss said 'don't get cocky, kid.'",
-      chicago_pitch_fired: "They fired me for 'tone issues.' I'm freelancing from a coffee shop.",
-      chicago_grad_bootcamp: "Bootcamp complete. I debug code and my life choices.",
-      chicago_grad_pivot: "I'm a junior dev now. My impostor syndrome has impostor syndrome.",
+      chicago_pitch_viral: "Our story went viral. Boss said 'don't get cocky, kid.'",
+      chicago_pitch_fired: "They fired us for 'tone issues.' Freelancing from a coffee shop.",
+      chicago_grad_bootcamp: "Bootcamp complete. We debug code and life choices.",
+      chicago_grad_pivot: "We're junior devs now. Our impostor syndrome has impostor syndrome.",
     };
 
-    const entry = journalEntries[outcome];
+    const entry = journalEntries[winningOutcome];
     if (entry) setJournal((prev) => [...prev, entry]);
 
     setSceneId(nextScene);
+    setTimeLeft(60);
+    setHasVoted(false);
+    setShowResults(false);
+    setVotes({});
+    setTotalVoters(0);
   };
 
   const getSceneImage = () => {
@@ -149,6 +207,11 @@ export const App = () => {
     return choices[sceneId] || [];
   };
 
+  const getPercentage = (outcome: string) => {
+    if (totalVoters === 0) return 0;
+    return Math.round((votes[outcome] / totalVoters) * 100);
+  };
+
   // WELCOME SCREEN
   if (sceneId === 'welcome') {
     return (
@@ -198,166 +261,201 @@ export const App = () => {
           </button>
         </div>
 
-        <style>{`
-          @keyframes gradient {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-          }
-          
-          @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-          
-          @keyframes typing {
-            from { opacity: 0; transform: translateX(-10px); }
-            to { opacity: 1; transform: translateX(0); }
-          }
-          
-          @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0; }
-          }
-          
-          .animate-gradient {
-            background-size: 200% 200%;
-            animation: gradient 15s ease infinite;
-          }
-          
-          .animate-fadeIn {
-            animation: fadeIn 0.8s ease-out;
-          }
-          
-          .animate-typing {
-            animation: typing 0.5s ease-out;
-          }
-          
-          .animate-blink {
-            animation: blink 1s step-end infinite;
-          }
-        `}</style>
+        <style>{styles}</style>
       </div>
     );
   }
 
-  // ALL GAME SCENES - Consistent two-column layout
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-[#ffdee9] via-[#fbc2eb] to-[#b5fffc] flex items-center justify-center p-6 font-sans animate-gradient">
-      <div className="max-w-7xl w-full grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* LEFT SECTION - Blog + Scenario + Choices */}
-        <div className="space-y-6">
-          {/* Laptop Blog */}
-          <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-4 shadow-2xl animate-fadeIn h-[280px]">
-            <div className="bg-gray-700 rounded-t-lg px-3 py-2 flex items-center gap-2 mb-3">
-              <div className="flex gap-1.5">
-                <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                <div className="w-3 h-3 rounded-full bg-green-500"></div>
-              </div>
-              <div className="flex-1 text-center">
-                <span className="text-xs text-gray-300 font-mono">reddilife.blog/cassey</span>
-              </div>
-            </div>
+  // VOTING RESULTS SCREEN
+  if (showResults) {
+    const currentChoices = getCurrentChoices();
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#ffdee9] via-[#fbc2eb] to-[#b5fffc] flex items-center justify-center p-6 font-sans animate-gradient">
+        <div className="max-w-4xl w-full">
+          <h1 className="text-4xl font-bold text-center text-white mb-8 drop-shadow-lg">
+            📊 Voting Results
+          </h1>
+          
+          <div className="bg-white rounded-2xl p-8 shadow-2xl mb-6">
+            <p className="text-center text-2xl font-bold text-gray-800 mb-6">
+              Total Voters: {totalVoters}
+            </p>
             
-            <div className="bg-white rounded-lg p-4 h-[200px] overflow-y-auto shadow-inner">
-              <h2 className="text-xl font-bold mb-3 text-purple-600 flex items-center gap-2">
-                <span>💻</span> The ReddiLife Blog
-              </h2>
-              <div className="space-y-2">
-                {journal.map((entry, index) => (
-                  <div key={index} className="animate-typing">
-                    <p className="text-sm text-gray-700 font-mono leading-relaxed border-l-2 border-purple-300 pl-2">
-                      <span className="text-purple-500 font-bold">Entry {index + 1}:</span> {entry}
-                    </p>
+            <div className="space-y-4">
+              {currentChoices.map((choice) => {
+                const percentage = getPercentage(choice.outcome);
+                const voteCount = votes[choice.outcome] || 0;
+                const isWinner = voteCount === Math.max(...Object.values(votes));
+                
+                return (
+                  <div key={choice.outcome} className={`p-4 rounded-lg ${isWinner ? 'bg-gradient-to-r from-green-100 to-green-200 border-2 border-green-500' : 'bg-gray-100'}`}>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="font-bold text-lg">{choice.label}</span>
+                      <span className="text-2xl font-bold text-purple-600">{percentage}%</span>
+                    </div>
+                    <div className="w-full bg-gray-300 rounded-full h-6 overflow-hidden">
+                      <div 
+                        className={`h-full ${isWinner ? 'bg-gradient-to-r from-green-500 to-green-600' : 'bg-gradient-to-r from-purple-500 to-pink-500'} transition-all duration-1000 flex items-center justify-center text-white text-sm font-bold`}
+                        style={{ width: `${percentage}%` }}
+                      >
+                        {voteCount} votes
+                      </div>
+                    </div>
+                    {isWinner && (
+                      <p className="text-green-700 font-bold mt-2 text-center">👑 WINNING CHOICE</p>
+                    )}
                   </div>
-                ))}
-                <span className="inline-block w-2 h-4 bg-purple-500 animate-blink"></span>
-              </div>
+                );
+              })}
             </div>
           </div>
 
-          {/* Current Scenario */}
-          <Scene
-            npc={getCurrentNPC()}
-            prompt={getCurrentPrompt()}
-            choices={[]}
-            onChoose={handleChoice}
-            showScenarioOnly={true}
-          />
+          <button
+            onClick={handleNextScene}
+            className="w-full px-8 py-4 bg-gradient-to-r from-green-500 to-blue-500 text-white text-xl rounded-lg hover:from-green-600 hover:to-blue-600 transform transition-all duration-300 hover:scale-105 shadow-2xl font-bold"
+          >
+            ➡️ Continue with Winning Choice
+          </button>
+        </div>
 
-          {/* Choices */}
-          <div className="space-y-4">
-            <Scene
-              choices={getCurrentChoices()}
-              prompt=""
-              onChoose={handleChoice}
-              showChoicesOnly={true}
-            />
+        <style>{styles}</style>
+      </div>
+    );
+  }
 
-            <button
-              onClick={() => {
-                setSceneId('welcome');
-                setJournal([]);
-              }}
-              className="w-full px-4 py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-lg hover:from-pink-600 hover:to-purple-600 transform transition-all duration-300 hover:scale-105 shadow-lg font-semibold"
-            >
-              🔄 Restart SimuLife
-            </button>
+  // GAME SCENES - Two column layout with timer
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-[#ffdee9] via-[#fbc2eb] to-[#b5fffc] flex items-center justify-center p-6 font-sans animate-gradient">
+      <div className="max-w-7xl w-full">
+        {/* Timer */}
+        <div className="mb-6 text-center">
+          <div className={`inline-block px-8 py-4 rounded-2xl shadow-2xl ${timeLeft <= 10 ? 'bg-red-500 animate-pulse' : 'bg-gradient-to-r from-purple-500 to-pink-500'}`}>
+            <p className="text-white text-sm font-bold mb-1">TIME REMAINING</p>
+            <p className="text-white text-5xl font-bold">{timeLeft}s</p>
           </div>
         </div>
 
-        {/* RIGHT SECTION - Image Only */}
-        <div className="flex items-start">
-          <div className="bg-white rounded-2xl p-4 shadow-2xl animate-fadeIn w-full h-[800px] flex items-center justify-center">
-            <img 
-              src={getSceneImage()} 
-              alt="Scene" 
-              className="max-w-full max-h-full object-contain rounded-lg"
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* LEFT SECTION */}
+          <div className="space-y-6">
+            {/* Laptop Blog */}
+            <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-4 shadow-2xl animate-fadeIn h-[280px]">
+              <div className="bg-gray-700 rounded-t-lg px-3 py-2 flex items-center gap-2 mb-3">
+                <div className="flex gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                  <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                </div>
+                <div className="flex-1 text-center">
+                  <span className="text-xs text-gray-300 font-mono">reddilife.blog/cassey</span>
+                </div>
+              </div>
+              
+              <div className="bg-white rounded-lg p-4 h-[200px] overflow-y-auto shadow-inner">
+                <h2 className="text-xl font-bold mb-3 text-purple-600 flex items-center gap-2">
+                  <span>💻</span> The ReddiLife Blog
+                </h2>
+                <div className="space-y-2">
+                  {journal.map((entry, index) => (
+                    <div key={index} className="animate-typing">
+                      <p className="text-sm text-gray-700 font-mono leading-relaxed border-l-2 border-purple-300 pl-2">
+                        <span className="text-purple-500 font-bold">Entry {index + 1}:</span> {entry}
+                      </p>
+                    </div>
+                  ))}
+                  <span className="inline-block w-2 h-4 bg-purple-500 animate-blink"></span>
+                </div>
+              </div>
+            </div>
+
+            {/* Current Scenario */}
+            <Scene
+              npc={getCurrentNPC()}
+              prompt={getCurrentPrompt()}
+              choices={[]}
+              onChoose={handleChoice}
+              showScenarioOnly={true}
             />
+
+            {/* Choices */}
+            <div className="space-y-4">
+              <Scene
+                choices={getCurrentChoices()}
+                prompt=""
+                onChoose={handleChoice}
+                showChoicesOnly={true}
+                hasVoted={hasVoted}
+              />
+
+              <button
+                onClick={() => {
+                  setSceneId('welcome');
+                  setJournal([]);
+                  setTimeLeft(60);
+                  setHasVoted(false);
+                  setShowResults(false);
+                }}
+                className="w-full px-4 py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-lg hover:from-pink-600 hover:to-purple-600 transform transition-all duration-300 hover:scale-105 shadow-lg font-semibold"
+              >
+                🔄 Restart SimuLife
+              </button>
+            </div>
+          </div>
+
+          {/* RIGHT SECTION - Image */}
+          <div className="flex items-start">
+            <div className="bg-white rounded-2xl p-4 shadow-2xl animate-fadeIn w-full h-[800px] flex items-center justify-center">
+              <img 
+                src={getSceneImage()} 
+                alt="Scene" 
+                className="max-w-full max-h-full object-contain rounded-lg"
+              />
+            </div>
           </div>
         </div>
       </div>
 
-      <style>{`
-        @keyframes gradient {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
-        }
-        
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        
-        @keyframes typing {
-          from { opacity: 0; transform: translateX(-10px); }
-          to { opacity: 1; transform: translateX(0); }
-        }
-        
-        @keyframes blink {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0; }
-        }
-        
-        .animate-gradient {
-          background-size: 200% 200%;
-          animation: gradient 15s ease infinite;
-        }
-        
-        .animate-fadeIn {
-          animation: fadeIn 0.8s ease-out;
-        }
-        
-        .animate-typing {
-          animation: typing 0.5s ease-out;
-        }
-        
-        .animate-blink {
-          animation: blink 1s step-end infinite;
-        }
-      `}</style>
+      <style>{styles}</style>
     </div>
   );
 };
+
+const styles = `
+  @keyframes gradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  @keyframes typing {
+    from { opacity: 0; transform: translateX(-10px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+  
+  .animate-gradient {
+    background-size: 200% 200%;
+    animation: gradient 15s ease infinite;
+  }
+  
+  .animate-fadeIn {
+    animation: fadeIn 0.8s ease-out;
+  }
+  
+  .animate-typing {
+    animation: typing 0.5s ease-out;
+  }
+  
+  .animate-blink {
+    animation: blink 1s step-end infinite;
+  }
+`;
