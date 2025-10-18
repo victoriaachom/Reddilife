@@ -1,0 +1,9 @@
+react
+react-dom
+vite
+@vitejs/plugin-react
+tailwindcss
+postcss
+autoprefixer
+@tailwindcss/postcss
+framer-motion
