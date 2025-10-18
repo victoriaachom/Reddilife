@@ -1,16 +1,225 @@
-import { useState, useEffect } from 'react';
-import { Scene } from './Scene';
+import { useState, useEffect, useRef } from 'react';
+import { Send, MessageCircle, X } from 'lucide-react';
 
-export const App = () => {
+const Scene = ({ 
+  prompt, 
+  choices, 
+  onChoose, 
+  npc, 
+  showScenarioOnly,
+  showChoicesOnly,
+  hasVoted
+}) => {
+  if (showChoicesOnly) {
+    return (
+      <div className="flex flex-col gap-4">
+        {choices.map((choice) => (
+          <button
+            key={choice.outcome}
+            onClick={() => onChoose(choice.outcome)}
+            disabled={hasVoted}
+            className={`w-full px-6 py-4 rounded-2xl text-white font-bold text-base bg-gradient-to-r from-purple-500 via-pink-500 to-purple-600 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 ${hasVoted ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
+            {choice.label}
+          </button>
+        ))}
+      </div>
+    );
+  }
+
+  if (showScenarioOnly) {
+    return (
+      <div className="bg-gradient-to-br from-white via-blue-50 to-purple-50 rounded-2xl shadow-2xl p-6 border-2 border-blue-200">
+        {npc && (
+          <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border-l-4 border-indigo-400 p-4 mb-4 rounded-lg shadow-md">
+            <div className="text-sm text-gray-600 font-semibold">{npc.name}</div>
+            <div className="text-xs text-gray-500 italic">{npc.bio}</div>
+            <div className="mt-2 text-md text-gray-800">💬 {npc.reaction}</div>
+          </div>
+        )}
+        
+        <div className="text-gray-800 text-base whitespace-pre-line leading-relaxed font-medium">
+          {prompt}
+        </div>
+      </div>
+    );
+  }
+
+  return null;
+};
+
+const LiveChat = ({ sceneId, isOpen, onClose, persistentMessages, onMessagesUpdate }) => {
+  const [inputMessage, setInputMessage] = useState('');
+  const [username, setUsername] = useState('');
+  const [hasSetUsername, setHasSetUsername] = useState(false);
+  const messagesEndRef = useRef(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [persistentMessages]);
+
+  const handleSetUsername = () => {
+    if (username.trim()) {
+      setHasSetUsername(true);
+      // Add join message to persistent messages
+      const joinMessage = {
+        id: Date.now() + Math.random(),
+        username: 'System',
+        message: `${username} joined the chat!`,
+        timestamp: Date.now(),
+        isSystem: true
+      };
+      onMessagesUpdate(prev => [...prev, joinMessage]);
+    }
+  };
+
+  const handleSendMessage = () => {
+    if (inputMessage.trim() && hasSetUsername) {
+      const newMessage = {
+        id: Date.now() + Math.random(),
+        username: username,
+        message: inputMessage,
+        timestamp: Date.now(),
+        isSystem: false
+      };
+      
+      onMessagesUpdate(prev => [...prev, newMessage]);
+      setInputMessage('');
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (!hasSetUsername) {
+        handleSetUsername();
+      } else {
+        handleSendMessage();
+      }
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed bottom-4 right-4 w-80 bg-white rounded-2xl shadow-2xl border-2 border-purple-300 flex flex-col max-h-[500px] z-50">
+      <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-3 rounded-t-2xl flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <MessageCircle className="w-5 h-5" />
+          <span className="font-bold">Live Chat</span>
+          <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">
+            {persistentMessages.filter(m => !m.isSystem).length} msgs
+          </span>
+        </div>
+        <button
+          onClick={onClose}
+          className="hover:bg-white/20 rounded-full p-1 transition-colors"
+        >
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+
+      {!hasSetUsername && (
+        <div className="p-4 bg-purple-50 border-b border-purple-200">
+          <p className="text-sm text-gray-700 mb-2">Enter your username to chat:</p>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Your username..."
+              maxLength={20}
+              className="flex-1 px-3 py-2 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+            />
+            <button
+              onClick={handleSetUsername}
+              className="bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 transition-colors text-sm font-medium"
+            >
+              Set
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
+        {persistentMessages.map((msg) => (
+          <div
+            key={msg.id}
+            className={`${
+              msg.isSystem
+                ? 'text-center text-xs text-gray-500 italic'
+                : msg.username === username
+                ? 'ml-auto'
+                : ''
+            } max-w-[85%]`}
+          >
+            {!msg.isSystem && (
+              <div className={`rounded-2xl px-4 py-2 ${
+                msg.username === username
+                  ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white ml-auto'
+                  : 'bg-white border border-gray-200 text-gray-800'
+              }`}>
+                <div className="text-xs font-semibold mb-1 opacity-80">
+                  {msg.username}
+                </div>
+                <div className="text-sm break-words">{msg.message}</div>
+                <div className="text-xs opacity-60 mt-1">
+                  {new Date(msg.timestamp).toLocaleTimeString([], { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                  })}
+                </div>
+              </div>
+            )}
+            {msg.isSystem && msg.message}
+          </div>
+        ))}
+        <div ref={messagesEndRef} />
+      </div>
+
+      {hasSetUsername && (
+        <div className="p-3 border-t border-gray-200 bg-white rounded-b-2xl">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={inputMessage}
+              onChange={(e) => setInputMessage(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Type a message..."
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+            />
+            <button
+              onClick={handleSendMessage}
+              disabled={!inputMessage.trim()}
+              className="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-2 rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Send className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default function App() {
   const [sceneId, setSceneId] = useState('welcome');
-  const [journal, setJournal] = useState<string[]>([]);
+  const [journal, setJournal] = useState([]);
   const [timeLeft, setTimeLeft] = useState(60);
   const [hasVoted, setHasVoted] = useState(false);
-  const [votes, setVotes] = useState<Record<string, number>>({});
+  const [votes, setVotes] = useState({});
   const [showResults, setShowResults] = useState(false);
   const [totalVoters, setTotalVoters] = useState(0);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [persistentMessages, setPersistentMessages] = useState([
+    { id: 0, username: 'System', message: 'Welcome to the chat! Talk to other players here 💬', timestamp: Date.now(), isSystem: true }
+  ]);
 
-  // Timer countdown
   useEffect(() => {
     if (sceneId === 'welcome' || showResults) return;
     
@@ -18,13 +227,11 @@ export const App = () => {
       const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
       return () => clearTimeout(timer);
     } else if (timeLeft === 0 && !showResults) {
-      // Time's up - show results
       setShowResults(true);
     }
   }, [timeLeft, hasVoted, showResults, sceneId]);
 
-  const handleChoice = (outcome: string) => {
-    // From welcome to scene1
+  const handleChoice = (outcome) => {
     if (sceneId === 'welcome') {
       setSceneId('scene1');
       setTimeLeft(60);
@@ -33,21 +240,19 @@ export const App = () => {
       return;
     }
 
-    // Record vote
     if (!hasVoted) {
       setHasVoted(true);
       const currentChoices = getCurrentChoices();
-      const initialVotes: Record<string, number> = {};
+      const initialVotes = {};
       currentChoices.forEach(choice => {
         initialVotes[choice.outcome] = 0;
       });
       
-      // Simulate other users voting (for demo purposes)
       const simulatedVotes = { ...initialVotes };
       currentChoices.forEach(choice => {
         simulatedVotes[choice.outcome] = Math.floor(Math.random() * 15) + 1;
       });
-      simulatedVotes[outcome] += 1; // Add current user's vote
+      simulatedVotes[outcome] += 1;
       
       const total = Object.values(simulatedVotes).reduce((a, b) => a + b, 0);
       setVotes(simulatedVotes);
@@ -57,7 +262,6 @@ export const App = () => {
   };
 
   const handleNextScene = () => {
-    // Determine next scene based on majority vote
     let nextScene = '';
     let winningOutcome = '';
     let maxVotes = 0;
@@ -77,7 +281,7 @@ export const App = () => {
       nextScene = 'scene4_' + winningOutcome;
     }
 
-    const journalEntries: Record<string, string> = {
+    const journalEntries = {
       minnesota: "We chose love over logic. Hope he's worth it.",
       connecticut: "Back to the bakery. Hope no one notices the bruises.",
       chicago: "32k and a broken heater. But it's ours.",
@@ -121,7 +325,7 @@ export const App = () => {
   };
 
   const getCurrentPrompt = () => {
-    const prompts: Record<string, string> = {
+    const prompts = {
       scene1: `🎓 Cassey (22) just graduated with a journalism degree in Chicago. She's staring at her cracked phone, weighing three impossible paths:\n\n1. Move to Minnesota with her pothead boyfriend.\n2. Return to Connecticut to live with her abusive mom and work in the family bakery.\n3. Stay in Chicago and take a $32k newsroom job.\n\nWhat should Cassey do?`,
       scene2_minnesota: `🌬️ Cassey moves in with her pothead boyfriend. The apartment smells like weed and ramen. He forgot to pay rent. What now?`,
       scene2_connecticut: `🍞 Cassey returns to Connecticut. Her mom critiques her posture while frosting cupcakes. Her stepdad calls her "kiddo" and hands her a mop. What now?`,
@@ -149,7 +353,7 @@ export const App = () => {
   };
 
   const getCurrentNPC = () => {
-    const npcs: Record<string, any> = {
+    const npcs = {
       scene2_minnesota: { name: "Zeke", bio: "Pothead boyfriend, aspiring DJ, allergic to responsibility", reaction: "Yo babe, I forgot to pay rent again. Can you cover it again?" },
       scene2_connecticut: { name: "Mom", bio: "Bakery owner, emotionally manipulative, frosting perfectionist", reaction: "Your posture is terrible. Customers can smell weakness." },
       scene2_chicago: { name: "Editor", bio: "Grizzled newsroom vet, drinks cold brew and hard bagels", reaction: "Kid, you're lucky we even hired you. Now fix that tabloid piece." },
@@ -161,7 +365,7 @@ export const App = () => {
   };
 
   const getCurrentChoices = () => {
-    const choices: Record<string, any[]> = {
+    const choices = {
       scene1: [
         { label: '🌬️ Move to Minnesota', outcome: 'minnesota' },
         { label: '🍞 Return to CT bakery', outcome: 'connecticut' },
@@ -207,139 +411,61 @@ export const App = () => {
     return choices[sceneId] || [];
   };
 
-  const getPercentage = (outcome: string) => {
+  const getPercentage = (outcome) => {
     if (totalVoters === 0) return 0;
     return Math.round((votes[outcome] / totalVoters) * 100);
   };
 
-  // WELCOME SCREEN
+  const styles = `
+    @keyframes gradient {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes typing {
+      from { opacity: 0; transform: translateX(-10px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+    
+    .animate-gradient {
+      background-size: 200% 200%;
+      animation: gradient 15s ease infinite;
+    }
+    
+    .animate-fadeIn {
+      animation: fadeIn 0.8s ease-out;
+    }
+    
+    .animate-typing {
+      animation: typing 0.5s ease-out;
+    }
+    
+    .animate-blink {
+      animation: blink 1s step-end infinite;
+    }
+  `;
+
   if (sceneId === 'welcome') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#ffdee9] via-[#fbc2eb] to-[#b5fffc] flex items-center justify-center p-6 font-sans animate-gradient">
-        <div className="max-w-2xl w-full">
-          <h1 className="text-5xl font-bold text-center text-white mb-8 drop-shadow-lg animate-fadeIn">
-            Welcome to ReddiLife ✨
-          </h1>
-          
-          <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-6 shadow-2xl animate-fadeIn mb-8">
-            <div className="bg-gray-700 rounded-t-lg px-3 py-2 flex items-center gap-2 mb-3">
-              <div className="flex gap-1.5">
-                <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                <div className="w-3 h-3 rounded-full bg-green-500"></div>
-              </div>
-              <div className="flex-1 text-center">
-                <span className="text-xs text-gray-300 font-mono">reddilife.blog/cassey</span>
-              </div>
-            </div>
+      <>
+        <div className="min-h-screen bg-gradient-to-br from-[#ffdee9] via-[#fbc2eb] to-[#b5fffc] flex items-center justify-center p-6 font-sans animate-gradient">
+          <div className="max-w-2xl w-full">
+            <h1 className="text-5xl font-bold text-center text-white mb-8 drop-shadow-lg animate-fadeIn">
+              Welcome to ReddiLife ✨
+            </h1>
             
-            <div className="bg-white rounded-lg p-6 min-h-[200px] shadow-inner">
-              <h2 className="text-2xl font-bold mb-4 text-purple-600 flex items-center gap-2">
-                <span>💻</span> The ReddiLife Blog
-              </h2>
-              <div className="space-y-3">
-                <div className="animate-typing">
-                  <p className="text-base text-gray-700 font-mono leading-relaxed border-l-2 border-purple-300 pl-3">
-                    <span className="text-purple-500 font-bold">Entry 1:</span> Hey, I'm Cassey!
-                  </p>
-                </div>
-                <div className="animate-typing" style={{ animationDelay: '0.5s' }}>
-                  <p className="text-base text-gray-700 font-mono leading-relaxed border-l-2 border-purple-300 pl-3">
-                    <span className="text-purple-500 font-bold">Entry 2:</span> Your choices will define me, so choose wisely... ✨
-                  </p>
-                </div>
-                <span className="inline-block w-2 h-4 bg-purple-500 animate-blink"></span>
-              </div>
-            </div>
-          </div>
-
-          <button
-            onClick={() => handleChoice('start')}
-            className="w-full px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xl rounded-lg hover:from-purple-600 hover:to-pink-600 transform transition-all duration-300 hover:scale-105 shadow-2xl font-bold"
-          >
-            🎮 Start Game
-          </button>
-        </div>
-
-        <style>{styles}</style>
-      </div>
-    );
-  }
-
-  // VOTING RESULTS SCREEN
-  if (showResults) {
-    const currentChoices = getCurrentChoices();
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-[#ffdee9] via-[#fbc2eb] to-[#b5fffc] flex items-center justify-center p-6 font-sans animate-gradient">
-        <div className="max-w-4xl w-full">
-          <h1 className="text-4xl font-bold text-center text-white mb-8 drop-shadow-lg">
-            📊 Voting Results
-          </h1>
-          
-          <div className="bg-white rounded-2xl p-8 shadow-2xl mb-6">
-            <p className="text-center text-2xl font-bold text-gray-800 mb-6">
-              Total Voters: {totalVoters}
-            </p>
-            
-            <div className="space-y-4">
-              {currentChoices.map((choice) => {
-                const percentage = getPercentage(choice.outcome);
-                const voteCount = votes[choice.outcome] || 0;
-                const isWinner = voteCount === Math.max(...Object.values(votes));
-                
-                return (
-                  <div key={choice.outcome} className={`p-4 rounded-lg ${isWinner ? 'bg-gradient-to-r from-green-100 to-green-200 border-2 border-green-500' : 'bg-gray-100'}`}>
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="font-bold text-lg">{choice.label}</span>
-                      <span className="text-2xl font-bold text-purple-600">{percentage}%</span>
-                    </div>
-                    <div className="w-full bg-gray-300 rounded-full h-6 overflow-hidden">
-                      <div 
-                        className={`h-full ${isWinner ? 'bg-gradient-to-r from-green-500 to-green-600' : 'bg-gradient-to-r from-purple-500 to-pink-500'} transition-all duration-1000 flex items-center justify-center text-white text-sm font-bold`}
-                        style={{ width: `${percentage}%` }}
-                      >
-                        {voteCount} votes
-                      </div>
-                    </div>
-                    {isWinner && (
-                      <p className="text-green-700 font-bold mt-2 text-center">👑 WINNING CHOICE</p>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <button
-            onClick={handleNextScene}
-            className="w-full px-8 py-4 bg-gradient-to-r from-green-500 to-blue-500 text-white text-xl rounded-lg hover:from-green-600 hover:to-blue-600 transform transition-all duration-300 hover:scale-105 shadow-2xl font-bold"
-          >
-            ➡️ Continue with Winning Choice
-          </button>
-        </div>
-
-        <style>{styles}</style>
-      </div>
-    );
-  }
-
-  // GAME SCENES - Two column layout with timer
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-[#ffdee9] via-[#fbc2eb] to-[#b5fffc] flex items-center justify-center p-6 font-sans animate-gradient">
-      <div className="max-w-7xl w-full">
-        {/* Timer */}
-        <div className="mb-6 text-center">
-          <div className={`inline-block px-8 py-4 rounded-2xl shadow-2xl ${timeLeft <= 10 ? 'bg-red-500 animate-pulse' : 'bg-gradient-to-r from-purple-500 to-pink-500'}`}>
-            <p className="text-white text-sm font-bold mb-1">TIME REMAINING</p>
-            <p className="text-white text-5xl font-bold">{timeLeft}s</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* LEFT SECTION */}
-          <div className="space-y-6">
-            {/* Laptop Blog */}
-            <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-4 shadow-2xl animate-fadeIn h-[280px]">
+            <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-6 shadow-2xl animate-fadeIn mb-8">
               <div className="bg-gray-700 rounded-t-lg px-3 py-2 flex items-center gap-2 mb-3">
                 <div className="flex gap-1.5">
                   <div className="w-3 h-3 rounded-full bg-red-500"></div>
@@ -351,111 +477,237 @@ export const App = () => {
                 </div>
               </div>
               
-              <div className="bg-white rounded-lg p-4 h-[200px] overflow-y-auto shadow-inner">
-                <h2 className="text-xl font-bold mb-3 text-purple-600 flex items-center gap-2">
+              <div className="bg-white rounded-lg p-6 min-h-[200px] shadow-inner">
+                <h2 className="text-2xl font-bold mb-4 text-purple-600 flex items-center gap-2">
                   <span>💻</span> The ReddiLife Blog
                 </h2>
-                <div className="space-y-2">
-                  {journal.map((entry, index) => (
-                    <div key={index} className="animate-typing">
-                      <p className="text-sm text-gray-700 font-mono leading-relaxed border-l-2 border-purple-300 pl-2">
-                        <span className="text-purple-500 font-bold">Entry {index + 1}:</span> {entry}
-                      </p>
-                    </div>
-                  ))}
+                <div className="space-y-3">
+                  <div className="animate-typing">
+                    <p className="text-base text-gray-700 font-mono leading-relaxed border-l-2 border-purple-300 pl-3">
+                      <span className="text-purple-500 font-bold">Entry 1:</span> Hey, I'm Cassey!
+                    </p>
+                  </div>
+                  <div className="animate-typing">
+                    <p className="text-base text-gray-700 font-mono leading-relaxed border-l-2 border-purple-300 pl-3">
+                      <span className="text-purple-500 font-bold">Entry 2:</span> Your choices will define me, so choose wisely... ✨
+                    </p>
+                  </div>
                   <span className="inline-block w-2 h-4 bg-purple-500 animate-blink"></span>
                 </div>
               </div>
             </div>
 
-            {/* Current Scenario */}
-            <Scene
-              npc={getCurrentNPC()}
-              prompt={getCurrentPrompt()}
-              choices={[]}
-              onChoose={handleChoice}
-              showScenarioOnly={true}
-            />
+            <button
+              onClick={() => handleChoice('start')}
+              className="w-full px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xl rounded-lg hover:from-purple-600 hover:to-pink-600 transform transition-all duration-300 hover:scale-105 shadow-2xl font-bold"
+            >
+              🎮 Start Game
+            </button>
+          </div>
 
-            {/* Choices */}
-            <div className="space-y-4">
-              <Scene
-                choices={getCurrentChoices()}
-                prompt=""
-                onChoose={handleChoice}
-                showChoicesOnly={true}
-                hasVoted={hasVoted}
-              />
+          <style>{styles}</style>
+        </div>
 
-              <button
-                onClick={() => {
-                  setSceneId('welcome');
-                  setJournal([]);
-                  setTimeLeft(60);
-                  setHasVoted(false);
-                  setShowResults(false);
-                }}
-                className="w-full px-4 py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-lg hover:from-pink-600 hover:to-purple-600 transform transition-all duration-300 hover:scale-105 shadow-lg font-semibold"
-              >
-                🔄 Restart SimuLife
-              </button>
+        {!isChatOpen && (
+          <button
+            onClick={() => setIsChatOpen(true)}
+            className="fixed bottom-4 right-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white p-4 rounded-full shadow-2xl hover:shadow-3xl transform hover:scale-110 transition-all z-40"
+          >
+            <MessageCircle className="w-6 h-6" />
+          </button>
+        )}
+
+        <LiveChat 
+          sceneId={sceneId} 
+          isOpen={isChatOpen}
+          onClose={() => setIsChatOpen(false)}
+          persistentMessages={persistentMessages}
+          onMessagesUpdate={setPersistentMessages}
+        />
+      </>
+    );
+  }
+
+
+  if (showResults) {
+    const currentChoices = getCurrentChoices();
+    return (
+      <>
+        <div className="min-h-screen bg-gradient-to-br from-[#ffdee9] via-[#fbc2eb] to-[#b5fffc] flex items-center justify-center p-6 font-sans animate-gradient">
+          <div className="max-w-4xl w-full">
+            <h1 className="text-4xl font-bold text-center text-white mb-8 drop-shadow-lg">
+              📊 Voting Results
+            </h1>
+            
+            <div className="bg-white rounded-2xl p-8 shadow-2xl mb-6">
+              <p className="text-center text-2xl font-bold text-gray-800 mb-6">
+                Total Voters: {totalVoters}
+              </p>
+              
+              <div className="space-y-4">
+                {currentChoices.map((choice) => {
+                  const percentage = getPercentage(choice.outcome);
+                  const voteCount = votes[choice.outcome] || 0;
+                  const isWinner = voteCount === Math.max(...Object.values(votes));
+                  
+                  return (
+                    <div key={choice.outcome} className={`p-4 rounded-lg ${isWinner ? 'bg-gradient-to-r from-green-100 to-green-200 border-2 border-green-500' : 'bg-gray-100'}`}>
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="font-bold text-lg">{choice.label}</span>
+                        <span className="text-2xl font-bold text-purple-600">{percentage}%</span>
+                      </div>
+                      <div className="w-full bg-gray-300 rounded-full h-6 overflow-hidden">
+                        <div 
+                          className={`h-full ${isWinner ? 'bg-gradient-to-r from-green-500 to-green-600' : 'bg-gradient-to-r from-purple-500 to-pink-500'} transition-all duration-1000 flex items-center justify-center text-white text-sm font-bold`}
+                          style={{ width: `${percentage}%` }}
+                        >
+                          {voteCount} votes
+                        </div>
+                      </div>
+                      {isWinner && (
+                        <p className="text-green-700 font-bold mt-2 text-center">👑 WINNING CHOICE</p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <button
+              onClick={handleNextScene}
+              className="w-full px-8 py-4 bg-gradient-to-r from-green-500 to-blue-500 text-white text-xl rounded-lg hover:from-green-600 hover:to-blue-600 transform transition-all duration-300 hover:scale-105 shadow-2xl font-bold"
+            >
+              ➡️ Continue with Winning Choice
+            </button>
+          </div>
+
+          <style>{styles}</style>
+        </div>
+
+        {!isChatOpen && (
+          <button
+            onClick={() => setIsChatOpen(true)}
+            className="fixed bottom-4 right-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white p-4 rounded-full shadow-2xl hover:shadow-3xl transform hover:scale-110 transition-all z-40"
+          >
+            <MessageCircle className="w-6 h-6" />
+          </button>
+        )}
+
+        <LiveChat 
+          sceneId={sceneId} 
+          isOpen={isChatOpen}
+          onClose={() => setIsChatOpen(false)}
+          persistentMessages={persistentMessages}
+          onMessagesUpdate={setPersistentMessages}
+        />
+      </>
+    );
+  }
+
+  return (
+    <>
+      <div className="min-h-screen bg-gradient-to-br from-[#ffdee9] via-[#fbc2eb] to-[#b5fffc] flex items-center justify-center p-6 font-sans animate-gradient">
+        <div className="max-w-7xl w-full">
+          <div className="mb-6 text-center">
+            <div className={`inline-block px-8 py-4 rounded-2xl shadow-2xl ${timeLeft <= 10 ? 'bg-red-500 animate-pulse' : 'bg-gradient-to-r from-purple-500 to-pink-500'}`}>
+              <p className="text-white text-sm font-bold mb-1">TIME REMAINING</p>
+              <p className="text-white text-5xl font-bold">{timeLeft}s</p>
             </div>
           </div>
 
-          {/* RIGHT SECTION - Image */}
-          <div className="flex items-start">
-            <div className="bg-white rounded-2xl p-4 shadow-2xl animate-fadeIn w-full h-[800px] flex items-center justify-center">
-              <img 
-                src={getSceneImage()} 
-                alt="Scene" 
-                className="max-w-full max-h-full object-contain rounded-lg"
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="space-y-6">
+              <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-4 shadow-2xl animate-fadeIn h-[280px]">
+                <div className="bg-gray-700 rounded-t-lg px-3 py-2 flex items-center gap-2 mb-3">
+                  <div className="flex gap-1.5">
+                    <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                    <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                  </div>
+                  <div className="flex-1 text-center">
+                    <span className="text-xs text-gray-300 font-mono">reddilife.blog/cassey</span>
+                  </div>
+                </div>
+                
+                <div className="bg-white rounded-lg p-4 h-[200px] overflow-y-auto shadow-inner">
+                  <h2 className="text-xl font-bold mb-3 text-purple-600 flex items-center gap-2">
+                    <span>💻</span> The ReddiLife Blog
+                  </h2>
+                  <div className="space-y-2">
+                    {journal.map((entry, index) => (
+                      <div key={index} className="animate-typing">
+                        <p className="text-sm text-gray-700 font-mono leading-relaxed border-l-2 border-purple-300 pl-2">
+                          <span className="text-purple-500 font-bold">Entry {index + 1}:</span> {entry}
+                        </p>
+                      </div>
+                    ))}
+                    <span className="inline-block w-2 h-4 bg-purple-500 animate-blink"></span>
+                  </div>
+                </div>
+              </div>
+
+              <Scene
+                npc={getCurrentNPC()}
+                prompt={getCurrentPrompt()}
+                choices={[]}
+                onChoose={handleChoice}
+                showScenarioOnly={true}
               />
+
+              <div className="space-y-4">
+                <Scene
+                  choices={getCurrentChoices()}
+                  prompt=""
+                  onChoose={handleChoice}
+                  showChoicesOnly={true}
+                  hasVoted={hasVoted}
+                />
+
+                <button
+                  onClick={() => {
+                    setSceneId('welcome');
+                    setJournal([]);
+                    setTimeLeft(60);
+                    setHasVoted(false);
+                    setShowResults(false);
+                  }}
+                  className="w-full px-4 py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-lg hover:from-pink-600 hover:to-purple-600 transform transition-all duration-300 hover:scale-105 shadow-lg font-semibold"
+                >
+                  🔄 Restart SimuLife
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-start">
+              <div className="bg-white rounded-2xl p-4 shadow-2xl animate-fadeIn w-full h-[800px] flex items-center justify-center">
+                <div className="text-center text-gray-400">
+                  <div className="text-6xl mb-4">📸</div>
+                  <p className="text-sm">Image: {getSceneImage()}</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
+
+        <style>{styles}</style>
       </div>
 
-      <style>{styles}</style>
-    </div>
-  );
-};
+      {!isChatOpen && (
+        <button
+          onClick={() => setIsChatOpen(true)}
+          className="fixed bottom-4 right-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white p-4 rounded-full shadow-2xl hover:shadow-3xl transform hover:scale-110 transition-all z-40"
+        >
+          <MessageCircle className="w-6 h-6" />
+        </button>
+      )}
 
-const styles = `
-  @keyframes gradient {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-  }
-  
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  
-  @keyframes typing {
-    from { opacity: 0; transform: translateX(-10px); }
-    to { opacity: 1; transform: translateX(0); }
-  }
-  
-  @keyframes blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0; }
-  }
-  
-  .animate-gradient {
-    background-size: 200% 200%;
-    animation: gradient 15s ease infinite;
-  }
-  
-  .animate-fadeIn {
-    animation: fadeIn 0.8s ease-out;
-  }
-  
-  .animate-typing {
-    animation: typing 0.5s ease-out;
-  }
-  
-  .animate-blink {
-    animation: blink 1s step-end infinite;
-  }
-`;
+      <LiveChat 
+        sceneId={sceneId} 
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
+        persistentMessages={persistentMessages}
+        onMessagesUpdate={setPersistentMessages}
+      />
+    </>
+  );
+}
