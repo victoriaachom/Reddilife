@@ -598,7 +598,7 @@ export default function App() {
   // Episodes Selection Screen
   if (sceneId === 'episodes') {
     const episodes = [
-      { id: 1, name: 'Episode 1', title: "Cassey's Story", available: true },
+      { id: 1, name: 'Episode 1✨', title: "Cassey's Story", available: true },
       { id: 2, name: 'Episode 2', title: 'Coming Soon', available: false },
       { id: 3, name: 'Episode 3', title: 'Coming Soon', available: false },
       { id: 4, name: 'Episode 4', title: 'Coming Soon', available: false },
