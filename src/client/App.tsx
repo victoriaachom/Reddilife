@@ -214,7 +214,8 @@ const LiveChat = ({ sceneId, isOpen, onClose, persistentMessages, onMessagesUpda
 };
 
 export default function App() {
-  const [sceneId, setSceneId] = useState('welcome');
+  const [sceneId, setSceneId] = useState('seasons');
+  const [selectedSeason, setSelectedSeason] = useState(null);
   const [journal, setJournal] = useState([]);
   const [timeLeft, setTimeLeft] = useState(60);
   const [hasVoted, setHasVoted] = useState(false);
@@ -227,7 +228,7 @@ export default function App() {
   ]);
 
   useEffect(() => {
-    if (sceneId === 'welcome' || showResults) return;
+    if (sceneId === 'welcome' || sceneId === 'seasons' || sceneId === 'episodes' || showResults) return;
     
     if (timeLeft > 0 && !hasVoted) {
       const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
@@ -323,7 +324,6 @@ export default function App() {
   };
 
   const getSceneImage = () => {
-    // Map each scene to its specific image with EXACT filenames
     const sceneImages = {
       'scene1': '/assets/Cassey.jpg',
       'scene2_minnesota': '/assets/scene2_minnesota 2.png',
@@ -514,11 +514,178 @@ export default function App() {
     }
   `;
 
+  // Seasons Selection Screen
+  if (sceneId === 'seasons') {
+    const seasons = [
+      { id: 1, name: 'Season 1', subtitle: 'The Beginning', color: 'from-purple-500 to-pink-500', available: true },
+      { id: 2, name: 'Season 2', subtitle: 'Coming Soon', color: 'from-blue-500 to-cyan-500', available: false },
+      { id: 3, name: 'Season 3', subtitle: 'Coming Soon', color: 'from-green-500 to-teal-500', available: false },
+      { id: 4, name: 'Season 4', subtitle: 'Coming Soon', color: 'from-orange-500 to-red-500', available: false },
+    ];
+
+    return (
+      <>
+        <div className="min-h-screen bg-gradient-to-br from-[#ffdee9] via-[#fbc2eb] to-[#b5fffc] flex items-center justify-center p-6 font-sans animate-gradient">
+          <div className="max-w-6xl w-full">
+            <h1 className="text-6xl font-bold text-center text-white mb-4 drop-shadow-lg animate-fadeIn">
+              ReddiLife 📺
+            </h1>
+            <p className="text-2xl text-center text-white mb-12 drop-shadow-lg">Select a Season</p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {seasons.map((season) => (
+                <button
+                  key={season.id}
+                  onClick={() => {
+                    if (season.available) {
+                      setSelectedSeason(season.id);
+                      setSceneId('episodes');
+                    }
+                  }}
+                  disabled={!season.available}
+                  className={`relative bg-white rounded-3xl p-8 shadow-2xl transform transition-all duration-300 hover:scale-105 ${
+                    season.available ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed'
+                  } animate-fadeIn`}
+                >
+                  <div className={`absolute inset-0 bg-gradient-to-br ${season.color} opacity-10 rounded-3xl`}></div>
+                  <div className="relative">
+                    <h2 className="text-4xl font-bold text-gray-800 mb-2">{season.name}</h2>
+                    <p className="text-xl text-gray-600 mb-4">{season.subtitle}</p>
+                    <div className="grid grid-cols-4 gap-2">
+                      {[...Array(8)].map((_, i) => (
+                        <div
+                          key={i}
+                          className={`h-3 rounded-full ${
+                            season.available ? `bg-gradient-to-r ${season.color}` : 'bg-gray-300'
+                          }`}
+                        ></div>
+                      ))}
+                    </div>
+                    {!season.available && (
+                      <div className="mt-4 inline-block px-4 py-2 bg-gray-200 rounded-full text-gray-600 font-semibold">
+                        🔒 Locked
+                      </div>
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <style>{styles}</style>
+        </div>
+
+        {!isChatOpen && (
+          <button
+            onClick={() => setIsChatOpen(true)}
+            className="fixed bottom-4 right-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white p-4 rounded-full shadow-2xl hover:shadow-3xl transform hover:scale-110 transition-all z-40"
+          >
+            <MessageCircle className="w-6 h-6" />
+          </button>
+        )}
+
+        <LiveChat 
+          sceneId={sceneId} 
+          isOpen={isChatOpen}
+          onClose={() => setIsChatOpen(false)}
+          persistentMessages={persistentMessages}
+          onMessagesUpdate={setPersistentMessages}
+        />
+      </>
+    );
+  }
+
+  // Episodes Selection Screen
+  if (sceneId === 'episodes') {
+    const episodes = [
+      { id: 1, name: 'Episode 1', title: "Cassey's Story", available: true },
+      { id: 2, name: 'Episode 2', title: 'Coming Soon', available: false },
+      { id: 3, name: 'Episode 3', title: 'Coming Soon', available: false },
+      { id: 4, name: 'Episode 4', title: 'Coming Soon', available: false },
+      { id: 5, name: 'Episode 5', title: 'Coming Soon', available: false },
+      { id: 6, name: 'Episode 6', title: 'Coming Soon', available: false },
+      { id: 7, name: 'Episode 7', title: 'Coming Soon', available: false },
+      { id: 8, name: 'Episode 8', title: 'Coming Soon', available: false },
+    ];
+
+    return (
+      <>
+        <div className="min-h-screen bg-gradient-to-br from-[#ffdee9] via-[#fbc2eb] to-[#b5fffc] flex items-center justify-center p-6 font-sans animate-gradient">
+          <div className="max-w-6xl w-full">
+            <button
+              onClick={() => {
+                setSceneId('seasons');
+                setSelectedSeason(null);
+              }}
+              className="mb-6 px-6 py-3 bg-white text-purple-600 rounded-xl font-bold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all"
+            >
+              ← Back to Seasons
+            </button>
+
+            <h1 className="text-5xl font-bold text-center text-white mb-4 drop-shadow-lg animate-fadeIn">
+              Season {selectedSeason} 🎬
+            </h1>
+            <p className="text-2xl text-center text-white mb-12 drop-shadow-lg">Select an Episode</p>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {episodes.map((episode) => (
+                <button
+                  key={episode.id}
+                  onClick={() => {
+                    if (episode.available) {
+                      setSceneId('welcome');
+                    }
+                  }}
+                  disabled={!episode.available}
+                  className={`bg-white rounded-2xl p-6 shadow-2xl transform transition-all duration-300 ${
+                    episode.available ? 'hover:scale-105 cursor-pointer' : 'opacity-50 cursor-not-allowed'
+                  } animate-fadeIn`}
+                >
+                  <div className="text-6xl mb-3">
+                    {episode.available ? '▶️' : '🔒'}
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-800 mb-1">{episode.name}</h3>
+                  <p className="text-sm text-gray-600">{episode.title}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <style>{styles}</style>
+        </div>
+
+        {!isChatOpen && (
+          <button
+            onClick={() => setIsChatOpen(true)}
+            className="fixed bottom-4 right-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white p-4 rounded-full shadow-2xl hover:shadow-3xl transform hover:scale-110 transition-all z-40"
+          >
+            <MessageCircle className="w-6 h-6" />
+          </button>
+        )}
+
+        <LiveChat 
+          sceneId={sceneId} 
+          isOpen={isChatOpen}
+          onClose={() => setIsChatOpen(false)}
+          persistentMessages={persistentMessages}
+          onMessagesUpdate={setPersistentMessages}
+        />
+      </>
+    );
+  }
+
   if (sceneId === 'welcome') {
     return (
       <>
         <div className="min-h-screen bg-gradient-to-br from-[#ffdee9] via-[#fbc2eb] to-[#b5fffc] flex items-center justify-center p-6 font-sans animate-gradient">
           <div className="max-w-2xl w-full">
+            <button
+              onClick={() => setSceneId('episodes')}
+              className="mb-6 px-6 py-3 bg-white text-purple-600 rounded-xl font-bold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all"
+            >
+              ← Back to Episodes
+            </button>
+
             <h1 className="text-5xl font-bold text-center text-white mb-8 drop-shadow-lg animate-fadeIn">
               Welcome to ReddiLife ✨
             </h1>
@@ -722,7 +889,8 @@ export default function App() {
 
                 <button
                   onClick={() => {
-                    setSceneId('welcome');
+                    setSceneId('seasons');
+                    setSelectedSeason(null);
                     setJournal([]);
                     setTimeLeft(60);
                     setHasVoted(false);
