@@ -6,16 +6,16 @@ import { Send, MessageCircle, X, User, RefreshCw, Play, Compass, LogOut, Search,
 // ============================================
 const getSceneImage = (sceneId) => {
   const sceneImages = {
-    'scene1': '/assets/Cassey.jpg',
-    'scene2_minnesota': '/assets/scene2_minnesota 2.png',
-    'scene2_connecticut': '/assets/scene2_connecticut 2.png',
-    'scene2_chicago': '/assets/scene2_chicago 2.png',
-    'scene3_minnesota_stay': '/assets/scene3_minnesota_stay 2.png',
-    'scene3_minnesota_leave': '/assets/scene3_minnesota_leave 2.png',
-    'scene3_connecticut_bake': '/assets/scene3_connecticut_bake 2.png',
-    'scene3_connecticut_escape': '/assets/scene3_connecticut_escape 2.png',
-    'scene3_chicago_pitch': '/assets/scene3_chicago_pitch 2.png',
-    'scene3_chicago_grad': '/assets/scene3_chicago_grad 2.png',
+    'scene1': '/assets/cassey-welcome.mp4',
+    'scene2_minnesota': '/assets/scene2_minnesota 2.gif',
+    'scene2_connecticut': '/assets/scene2_connecticut 2.gif',
+    'scene2_chicago': '/assets/scene2_chicago 2.gif',
+    'scene3_minnesota_stay': '/assets/scene3_minnesota_stay 2.gif',
+    'scene3_minnesota_leave': '/assets/scene3_minnesota_leave 2.gif',
+    'scene3_connecticut_bake': '/assets/scene3_connecticut_bake 2.gif',
+    'scene3_connecticut_escape': '/assets/scene3_connecticut_escape 2.gif',
+    'scene3_chicago_pitch': '/assets/scene3_chicago_pitch 2.gif',
+    'scene3_chicago_grad': '/assets/scene3_chicago_grad 2.gif',
     'scene4_minnesota_stay_therapy': '/assets/scene4_minnesota_stay_therapy 2.png',
     'scene4_minnesota_stay_business': '/assets/scene4_minnesota_stay_business 2.png',
     'scene4_minnesota_leave_apartment': '/assets/scene4_minnesota_leave_apartment 2.png',
@@ -30,7 +30,7 @@ const getSceneImage = (sceneId) => {
     'scene4_chicago_grad_pivot': '/assets/scene4_chicago_grad_pivot.png',
   };
   
-  return sceneImages[sceneId] || '/assets/Cassey.jpg';
+  return sceneImages[sceneId] || '/assets/Cassey-life.gif';
 };
 
 // ============================================
@@ -38,18 +38,59 @@ const getSceneImage = (sceneId) => {
 // ============================================
 const SceneImage = ({ sceneId }) => {
   const imageSrc = getSceneImage(sceneId);
-  
+  const isVideo = imageSrc.endsWith('.mp4');
+  const imgRef = useRef(null);
+  const loopCount = useRef(0);
+  const maxLoops = 20;
+
+  useEffect(() => {
+    if (!isVideo && imgRef.current) {
+      const gifDuration = 8000; // Adjust to match GIF length
+      const preload = new Image();
+
+      const interval = setInterval(() => {
+        if (loopCount.current < maxLoops && imgRef.current) {
+          preload.src = `${imageSrc}?t=${Date.now()}`; // preload next frame quietly
+          preload.onload = () => {
+            imgRef.current.src = preload.src; // swap instantly with no blank
+          };
+          loopCount.current += 1;
+        } else {
+          clearInterval(interval);
+        }
+      }, gifDuration);
+
+      return () => clearInterval(interval);
+    }
+  }, [imageSrc, isVideo]);
+
   return (
-    <div className="bg-white rounded-2xl p-4 shadow-2xl animate-fadeIn w-full h-[800px] overflow-hidden">
-      <img 
-        src={imageSrc} 
-        alt={`Scene ${sceneId}`}
-        className="w-full h-full object-cover rounded-lg"
-        onError={(e) => {
-          e.target.src = '/assets/Cassey.jpg';
-          e.target.onerror = null;
-        }}
-      />
+    <div className="bg-white rounded-2xl p-4 shadow-2xl animate-fadeIn w-full h-[800px] overflow-hidden flex items-center justify-center">
+      {isVideo ? (
+        <video
+          src={imageSrc}
+          autoPlay
+          playsInline
+          muted={false}
+          controls={false}
+          loop={false} // video plays once
+          className="w-full h-full object-cover rounded-lg"
+          onError={(e) => {
+            e.target.outerHTML = `<img src="/assets/Cassey-life.gif" alt="Fallback" class="w-full h-full object-cover rounded-lg" />`;
+          }}
+        />
+      ) : (
+        <img
+          ref={imgRef}
+          src={imageSrc}
+          alt={`Scene ${sceneId}`}
+          className="w-full h-full object-cover rounded-lg"
+          onError={(e) => {
+            e.target.src = '/assets/Cassey-life.gif';
+            e.target.onerror = null;
+          }}
+        />
+      )}
     </div>
   );
 };
@@ -60,13 +101,25 @@ const SceneImage = ({ sceneId }) => {
 const LoginScreen = ({ onLogin }) => {
   const [username, setUsername] = useState('');
   const [error, setError] = useState('');
-  const [gifTimestamp, setGifTimestamp] = useState(Date.now());
+  const casseyImgRef = useRef(null);
+  const zekeImgRef = useRef(null);
 
-  // Force GIFs to reload every 5 seconds to ensure continuous animation
+  // Force GIF animation to loop continuously
   useEffect(() => {
+    const reloadGif = (imgElement) => {
+      if (imgElement) {
+        const src = imgElement.src;
+        imgElement.src = '';
+        imgElement.src = src;
+      }
+    };
+
+    // Reload GIFs periodically to ensure continuous animation
     const interval = setInterval(() => {
-      setGifTimestamp(Date.now());
-    }, 5000);
+      reloadGif(casseyImgRef.current);
+      reloadGif(zekeImgRef.current);
+    }, 3000); // Adjust timing based on your GIF duration
+
     return () => clearInterval(interval);
   }, []);
 
@@ -125,10 +178,10 @@ const LoginScreen = ({ onLogin }) => {
       {/* Left GIF - Cassey */}
       <div className="absolute left-0 top-1/2 transform -translate-y-1/2 hidden lg:block animate-fadeIn">
         <img 
-          src={`/assets/intro_cassey.gif?t=${gifTimestamp}`}
+          ref={casseyImgRef}
+          src="/assets/intro_cassey.gif"
           alt="Cassey"
           className="h-96 w-auto object-contain"
-          key={gifTimestamp}
           onError={(e) => {
             e.target.style.display = 'none';
           }}
@@ -138,10 +191,10 @@ const LoginScreen = ({ onLogin }) => {
       {/* Right GIF - Zeke */}
       <div className="absolute right-0 top-1/2 transform -translate-y-1/2 hidden lg:block animate-fadeIn">
         <img 
-          src={`/assets/intro_zeke.gif?t=${gifTimestamp}`}
+          ref={zekeImgRef}
+          src="/assets/intro_zeke.gif"
           alt="Zeke"
           className="h-96 w-auto object-contain"
-          key={gifTimestamp}
           onError={(e) => {
             e.target.style.display = 'none';
           }}
@@ -323,18 +376,30 @@ const CommunitiesExplorer = ({ username, onBack, onSelectCommunity }) => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [joinedCommunities, setJoinedCommunities] = useState(new Set());
 
+  // Load joined communities on mount
+  useEffect(() => {
+  try {
+    const saved = localStorage.getItem(`communities:${username}`);
+    if (saved) {
+      setJoinedCommunities(new Set(JSON.parse(saved)));
+    }
+  } catch (error) {
+    console.log('No joined communities found');
+  }
+}, [username]);
+
   const communities = [
     {
-      id: 'casseys-life',
-      name: "Cassey's Life",
-      description: "Follow Cassey's journey through life's biggest decisions",
-      members: '12.5K',
-      icon: '👩‍💼',
-      category: 'life',
-      gradient: 'from-purple-400 to-pink-500',
-      hasEpisodes: true,
-      bannerImage: '/assets/Cassey.jpg'
-    },
+  id: 'casseys-life',
+  name: "Cassey's Life",
+  description: "Follow Cassey's journey through life's biggest decisions",
+  members: '12.5K',
+  icon: '👩‍💼',
+  category: 'life',
+  gradient: 'from-purple-400 to-pink-500',
+  hasEpisodes: true,
+  bannerImage: `/assets/Cassey-life.gif?reload=${Date.now()}`
+},
     {
       id: 'teen-years',
       name: 'Teen Years',
@@ -431,16 +496,13 @@ const CommunitiesExplorer = ({ username, onBack, onSelectCommunity }) => {
   });
 
   const handleJoinCommunity = (communityId) => {
-    setJoinedCommunities(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(communityId)) {
-        newSet.delete(communityId);
-      } else {
-        newSet.add(communityId);
-      }
-      return newSet;
-    });
-  };
+  setJoinedCommunities(prev => {
+    const newSet = new Set(prev);
+    newSet.has(communityId) ? newSet.delete(communityId) : newSet.add(communityId);
+    localStorage.setItem(`communities:${username}`, JSON.stringify(Array.from(newSet)));
+    return newSet;
+  });
+};
 
   const handlePlayCommunity = (community) => {
     if (community.hasEpisodes) {
@@ -517,18 +579,18 @@ const CommunitiesExplorer = ({ username, onBack, onSelectCommunity }) => {
                 className="bg-white rounded-2xl shadow-xl overflow-hidden transform transition-all duration-300 hover:scale-105 hover:shadow-2xl"
               >
                 {/* Community Banner */}
-                <div className={`h-32 bg-gradient-to-r ${community.gradient} flex items-center justify-center relative`}>
+                <div className={`h-56 bg-gradient-to-r ${community.gradient} flex items-center justify-center relative overflow-hidden`}>
                   {community.bannerImage ? (
                     <img 
                       src={community.bannerImage} 
                       alt={community.name}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover scale-105"
                     />
                   ) : (
-                    <div className="text-6xl">{community.icon}</div>
+                    <div className="text-7xl">{community.icon}</div>
                   )}
                   {community.comingSoon && (
-                    <div className="absolute top-2 right-2 bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full text-xs font-bold">
+                    <div className="absolute top-3 right-3 bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full text-xs font-bold">
                       Coming Soon
                     </div>
                   )}
@@ -617,6 +679,7 @@ const EpisodesSelection = ({ seasonId, onSelectEpisode, onBack, username }) => {
         number: 1,
         title: 'The First Day',
         description: 'Cassey starts her first day at work and faces her first big decision',
+        thumbnail: '/assets/cassey-s1e1.gif',
         duration: '15 min',
         available: true
       }
@@ -659,8 +722,18 @@ const EpisodesSelection = ({ seasonId, onSelectEpisode, onBack, username }) => {
               }`}
               onClick={() => episode.available && onSelectEpisode(episode.id)}
             >
-              <div className="h-48 bg-gradient-to-r from-purple-400 to-pink-500 flex items-center justify-center relative">
-                <div className="text-7xl">📺</div>
+              <div className="h-48 bg-gradient-to-r from-purple-400 to-pink-500 flex items-center justify-center relative overflow-hidden">
+                {episode.thumbnail ? (
+                  <img 
+                    src={episode.thumbnail} 
+                    alt={episode.title} 
+                    className="w-full h-full object-cover"
+                    onError={(e) => { e.target.src = '/assets/Cassey-life.gif'; }}
+                  />
+                ) : (
+                  <div className="text-7xl">📺</div>
+                )}
+
                 {!episode.available && (
                   <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                     <div className="bg-yellow-400 text-yellow-900 px-4 py-2 rounded-full text-sm font-bold">
@@ -668,7 +741,7 @@ const EpisodesSelection = ({ seasonId, onSelectEpisode, onBack, username }) => {
                     </div>
                   </div>
                 )}
-              </div>
+            </div>
 
               <div className="p-6">
                 <div className="flex items-center justify-between mb-2">
@@ -706,7 +779,7 @@ const SeasonsSelection = ({ onSelectSeason, onBack, username }) => {
       title: 'Season 1: New Beginnings',
       description: 'Follow Cassey as she navigates her first major life decisions after college',
       episodes: 10,
-      thumbnail: '/assets/Cassey.jpg',
+      thumbnail: '/assets/Cassey-s1.gif',
       gradient: 'from-purple-400 to-pink-500',
       available: true
     },
@@ -1102,13 +1175,12 @@ export default function App() {
     setSceneId('seasons');
   };
 
-  const handleBackToCommunities = () => {
-    setSceneId('seasons');
-    setSelectedSeason(null);
-    setSelectedEpisode(null);
-    setSelectedCommunity(null);
-    setShowCommunities(true);
-  };
+  const handleBackToDashboard = () => {
+  setShowDashboard(true);
+  setSceneId('seasons');
+  setSelectedSeason(null);
+  setSelectedEpisode(null);
+};
 
   const handleSelectSeason = (seasonId) => {
     setSelectedSeason(seasonId);
@@ -1451,7 +1523,7 @@ export default function App() {
     return (
       <SeasonsSelection
         onSelectSeason={handleSelectSeason}
-        onBack={handleBackToCommunities}
+        onBack={handleBackToDashboard}
         username={currentUser}
       />
     );
@@ -1478,11 +1550,11 @@ export default function App() {
           <div className="max-w-7xl w-full">
             <div className="flex justify-between items-center mb-6">
               <button
-                onClick={handleBackToCommunities}
+                onClick={handleBackToDashboard}
                 className="bg-white/20 backdrop-blur-sm px-6 py-2 rounded-full text-white font-semibold hover:bg-white/30 transition-all flex items-center gap-2"
               >
                 <Compass className="w-5 h-5" />
-                Explore Communities
+                Home
               </button>
               <div className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-white font-semibold">
                 👤 {currentUser}
