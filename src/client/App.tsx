@@ -16,18 +16,18 @@ const getSceneImage = (sceneId) => {
     'scene3_connecticut_escape': '/assets/scene3_connecticut_escape 2.gif',
     'scene3_chicago_pitch': '/assets/scene3_chicago_pitch 2.gif',
     'scene3_chicago_grad': '/assets/scene3_chicago_grad 2.gif',
-    'scene4_minnesota_stay_therapy': '/assets/scene4_minnesota_stay_therapy 2.png',
-    'scene4_minnesota_stay_business': '/assets/scene4_minnesota_stay_business 2.png',
-    'scene4_minnesota_leave_apartment': '/assets/scene4_minnesota_leave_apartment 2.png',
-    'scene4_minnesota_leave_roommate': '/assets/scene4_minnesota_leave_apartment 2.png',
-    'scene4_connecticut_bake_recipe': '/assets/scene4_connecticut_bake_recipe 2.png',
-    'scene4_connecticut_bake_manager': '/assets/scene4_connecticut_bake_manager 2.png',
-    'scene4_connecticut_escape_road': '/assets/scene4_connecticut_escape_road 2.png',
-    'scene4_connecticut_escape_friend': '/assets/scene4_connecticut_escape_road 2.png',
-    'scene4_chicago_pitch_viral': '/assets/scene4_chicago_pitch_fired.png',
-    'scene4_chicago_pitch_fired': '/assets/scene4_chicago_pitch_fired.png',
-    'scene4_chicago_grad_bootcamp': '/assets/scene4_chicago_grad_pivot.png',
-    'scene4_chicago_grad_pivot': '/assets/scene4_chicago_grad_pivot.png',
+    'scene4_minnesota_stay_therapy': '/assets/scene4_minnesota_stay_therapy 2.gif',
+    'scene4_minnesota_stay_business': '/assets/scene4_minnesota_stay_business 2.gif',
+    'scene4_minnesota_leave_apartment': '/assets/scene4_minnesota_leave_apartment 2.gif',
+    'scene4_minnesota_leave_roommate': '/assets/scene4_minnesota_leave_roommate 2.gif',
+    'scene4_connecticut_bake_recipe': '/assets/scene4_connecticut_bake_recipe 2.gif',
+    'scene4_connecticut_bake_manager': '/assets/scene4_connecticut_bake_manager 2.gif',
+    'scene4_connecticut_escape_road': '/assets/scene4_connecticut_escape_road 2.gif',
+    'scene4_connecticut_escape_friend': '/assets/scene4_connecticut_escape_friend 2.gif',
+    'scene4_chicago_pitch_viral': '/assets/scene4_chicago_pitch_viral.gif',
+    'scene4_chicago_pitch_fired': '/assets/scene4_chicago_pitch_fired.gif',
+    'scene4_chicago_grad_bootcamp': '/assets/scene4_chicago_grad_bootcamp.gif',
+    'scene4_chicago_grad_pivot': '/assets/scene4_chicago_grad_pivot.gif',
   };
   
   return sceneImages[sceneId] || '/assets/Cassey-life.gif';
@@ -259,10 +259,40 @@ const LoginScreen = ({ onLogin }) => {
   );
 };
 
+const PROGRESS_KEY = (username) => `reddilife:progress:${username}`;
+
+const saveProgress = (username, data) => {
+  if (!username) return;
+  try {
+    localStorage.setItem(PROGRESS_KEY(username), JSON.stringify(data));
+  } catch (err) {
+    console.error('Error saving progress', err);
+  }
+};
+
+const loadProgress = (username) => {
+  if (!username) return null;
+  try {
+    const raw = localStorage.getItem(PROGRESS_KEY(username));
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (err) {
+    console.error('Error loading progress', err);
+    return null;
+  }
+};
+
 // ============================================
 // POST-LOGIN DASHBOARD COMPONENT
 // ============================================
-const PostLoginDashboard = ({ username, onResetAccount, onContinue, onExploreCommunities, onLogout }) => {
+const PostLoginDashboard = ({
+  username,
+  onResetAccount,
+  onContinue,
+  onExploreCommunities,
+  onLogout,
+  hasProgress,        
+}) => {
   const [selectedOption, setSelectedOption] = useState(null);
 
   const handleOptionClick = (option, callback) => {
@@ -271,6 +301,7 @@ const PostLoginDashboard = ({ username, onResetAccount, onContinue, onExploreCom
       callback();
     }, 300);
   };
+  const continueDisabled = !hasProgress;
 
   const dashboardStyles = `
     @keyframes slideIn {
@@ -314,20 +345,35 @@ const PostLoginDashboard = ({ username, onResetAccount, onContinue, onExploreCom
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div
-            className={`option-card bg-white rounded-2xl p-8 shadow-xl cursor-pointer animate-slideIn ${selectedOption === 'continue' ? 'selected' : ''}`}
-            onClick={() => handleOptionClick('continue', onContinue)}
-            style={{ animationDelay: '0.1s' }}
-          >
-            <div className="bg-gradient-to-r from-green-400 to-blue-500 p-4 rounded-full w-16 h-16 flex items-center justify-center mb-4">
-              <Play className="w-8 h-8 text-white" />
-            </div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">
-              Continue Your Story
-            </h2>
-            <p className="text-gray-600">
-              Pick up where you left off in your current adventure
-            </p>
+          className={`
+            option-card bg-white rounded-2xl p-8 shadow-xl animate-slideIn
+            ${selectedOption === 'continue' ? 'selected' : ''}
+            ${continueDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+          `}
+          onClick={() => {
+            if (!continueDisabled) {
+              handleOptionClick('continue', onContinue);
+            }
+          }}
+          style={{ animationDelay: '0.1s' }}
+          title={
+            continueDisabled
+              ? 'No story to continue yet. Start a story in Communities.'
+              : 'Pick up where you left off in your current adventure'
+          }
+        >
+          <div className="bg-gradient-to-r from-green-400 to-blue-500 p-4 rounded-full w-16 h-16 flex items-center justify-center mb-4">
+            <Play className="w-8 h-8 text-white" />
           </div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+            Continue Your Story
+          </h2>
+          <p className="text-gray-600">
+            {continueDisabled
+              ? 'No story to continue yet'
+              : 'Pick up where you left off in your current adventure'}
+          </p>
+        </div>
 
           <div
             className={`option-card bg-white rounded-2xl p-8 shadow-xl cursor-pointer animate-slideIn ${selectedOption === 'explore' ? 'selected' : ''}`}
@@ -371,7 +417,7 @@ const PostLoginDashboard = ({ username, onResetAccount, onContinue, onExploreCom
 // ============================================
 // COMMUNITIES EXPLORER COMPONENT (ENHANCED)
 // ============================================
-const CommunitiesExplorer = ({ username, onBack, onSelectCommunity }) => {
+const CommunitiesExplorer = ({ username, onBack, onSelectCommunity, onLogout }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [joinedCommunities, setJoinedCommunities] = useState(new Set());
@@ -410,6 +456,17 @@ const CommunitiesExplorer = ({ username, onBack, onSelectCommunity }) => {
       gradient: 'from-blue-400 to-cyan-500',
       hasEpisodes: false,
       comingSoon: true
+    },
+    {
+      id: 'zekes-life',
+      name: "Zeke's Life",
+      description: "Follow Zeke's adventurous journey through life's twists and turns",
+      members: '5.3K',
+      icon: '🧑‍💼',
+      category: 'life',
+      gradient: 'from-blue-400 to-red-500',
+      hasEpisodes: true
+      // bannerImage: `/assets/Zeke-life.gif?reload=${Date.now()}`
     },
     {
       id: 'career-climbers',
@@ -485,15 +542,29 @@ const CommunitiesExplorer = ({ username, onBack, onSelectCommunity }) => {
     { id: 'career', name: 'Career', icon: '💼' },
     { id: 'relationships', name: 'Love', icon: '❤️' },
     { id: 'adventure', name: 'Adventure', icon: '🗺️' },
-    { id: 'family', name: 'Family', icon: '👨‍👩‍👧‍👦' }
+    { id: 'family', name: 'Family', icon: '👨‍👩‍👧‍👦' },
+    {id: 'joined', name: 'Joined', icon: '✅' }
   ];
 
-  const filteredCommunities = communities.filter(community => {
-    const matchesSearch = community.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         community.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || community.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  const filteredCommunities = communities.filter((community) => {
+  const matchesSearch =
+    community.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    community.description.toLowerCase().includes(searchQuery.toLowerCase());
+
+  let matchesCategory = true;
+
+  if (selectedCategory === 'all') {
+    matchesCategory = true;
+  } else if (selectedCategory === 'joined') {
+    // Only show communities the user has joined
+    matchesCategory = joinedCommunities.has(community.id);
+  } else {
+    // Normal category behavior
+    matchesCategory = community.category === selectedCategory;
+  }
+
+  return matchesSearch && matchesCategory;
+});
 
   const handleJoinCommunity = (communityId) => {
   setJoinedCommunities(prev => {
@@ -522,9 +593,15 @@ const CommunitiesExplorer = ({ username, onBack, onSelectCommunity }) => {
             <ArrowLeft className="w-4 h-4" />
             Back
           </button>
-          <div className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-white font-semibold">
-            👤 {username}
-          </div>
+
+          <button
+            onClick={onLogout}
+            title="Logout and save progress"
+            className="group px-4 py-2 bg-white/20 backdrop-blur-sm text-white rounded-full hover:bg-white/30 transition-all flex items-center gap-2 font-semibold"
+          >
+            <span>👤 {username}</span>
+            <LogOut className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+          </button>
         </div>
 
         <div className="text-center mb-8">
@@ -671,7 +748,7 @@ const CommunitiesExplorer = ({ username, onBack, onSelectCommunity }) => {
 // ============================================
 // EPISODES SELECTION COMPONENT
 // ============================================
-const EpisodesSelection = ({ seasonId, onSelectEpisode, onBack, username }) => {
+const EpisodesSelection = ({ seasonId, onSelectEpisode, onBack, username, onLogout }) => {
   const episodes = {
     'season1': [
       {
@@ -680,6 +757,26 @@ const EpisodesSelection = ({ seasonId, onSelectEpisode, onBack, username }) => {
         title: 'The First Day',
         description: 'Cassey starts her first day at work and faces her first big decision',
         thumbnail: '/assets/cassey-s1e1.gif',
+        duration: '15 min',
+        available: true
+      }
+    ],
+    'season1_z': [
+      {
+        id: 'zeke-ep1',
+        number: 1,
+        title: 'A New Beginning',
+        description: 'Zeke embarks on a new journey in a different city',
+        thumbnail: '/assets/intro_zeke.gif',
+        duration: '15 min',
+        available: true
+      },
+      {
+        id: 'zeke-ep2',
+        number: 2,
+        title: 'Money Challenges',
+        description: 'Zeke faces his first challenges after winning the lottery',
+        thumbnail: '/assets/intro_zeke.gif',
         duration: '15 min',
         available: true
       }
@@ -699,9 +796,15 @@ const EpisodesSelection = ({ seasonId, onSelectEpisode, onBack, username }) => {
             <ArrowLeft className="w-4 h-4" />
             Back to Seasons
           </button>
-          <div className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-white font-semibold">
-            👤 {username}
-          </div>
+
+          <button
+            onClick={onLogout}
+            title="Logout and save progress"
+            className="group bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-white font-semibold hover:bg-white/30 transition-all flex items-center gap-2"
+          >
+            <span>👤 {username}</span>
+            <LogOut className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+          </button>
         </div>
 
         <div className="text-center mb-12">
@@ -772,10 +875,12 @@ const EpisodesSelection = ({ seasonId, onSelectEpisode, onBack, username }) => {
 // ============================================
 // SEASONS SELECTION COMPONENT
 // ============================================
-const SeasonsSelection = ({ onSelectSeason, onBack, username }) => {
+const SeasonsSelection = ({ onSelectSeason, onBack, username, communityId, onLogout }) => {
   const seasons = [
+    // Cassey seasons
     {
       id: 'season1',
+      community: 'cassey',
       title: 'Season 1: New Beginnings',
       description: 'Follow Cassey as she navigates her first major life decisions after college',
       episodes: 10,
@@ -785,6 +890,7 @@ const SeasonsSelection = ({ onSelectSeason, onBack, username }) => {
     },
     {
       id: 'season2',
+      community: 'cassey',
       title: 'Season 2: Career Moves',
       description: 'Cassey faces new challenges in her professional life',
       episodes: 10,
@@ -794,8 +900,9 @@ const SeasonsSelection = ({ onSelectSeason, onBack, username }) => {
     },
     {
       id: 'season3',
+      community: 'cassey',
       title: 'Season 3: Relationships',
-      description: 'Love and friendship take center stage in Cassey\'s journey',
+      description: "Love and friendship take center stage in Cassey's journey",
       episodes: 10,
       thumbnail: null,
       gradient: 'from-pink-400 to-rose-500',
@@ -803,6 +910,7 @@ const SeasonsSelection = ({ onSelectSeason, onBack, username }) => {
     },
     {
       id: 'season4',
+      community: 'cassey',
       title: 'Season 4: Major Changes',
       description: 'Life-changing decisions await as Cassey reaches a crossroads',
       episodes: 10,
@@ -812,30 +920,99 @@ const SeasonsSelection = ({ onSelectSeason, onBack, username }) => {
     },
     {
       id: 'season5',
+      community: 'cassey',
       title: 'Season 5: New Horizons',
-      description: 'The final chapter of Cassey\'s incredible journey',
+      description: "The final chapter of Cassey's incredible journey",
       episodes: 10,
       thumbnail: null,
       gradient: 'from-orange-400 to-red-500',
       available: false
+    },
+
+    // Zeke seasons
+    {      
+      id: 'season1_z',
+      community: 'zeke',
+      title: 'Season 1: A New Beginning',
+      description: 'Join Zeke as he embarks on a new journey in a different city',
+      episodes: 10,
+      thumbnail: null,
+      gradient: 'from-blue-400 to-red-500',
+      available: true
+    },
+    {
+      id: 'season2_z',
+      community: 'zeke',
+      title: 'Season 2: The Rise',
+      description: 'Zeke starts leveling up his life — career, money, and danger',
+      episodes: 10,
+      thumbnail: null,
+      gradient: 'from-indigo-400 to-purple-500',
+      available: false
+    },
+    {
+      id: 'season3_z',
+      community: 'zeke',
+      title: 'Season 3: Breaking Point',
+      description: "New pressure, new relationships, and Zeke’s biggest temptations yet",
+      episodes: 10,
+      thumbnail: null,
+      gradient: 'from-red-400 to-orange-500',
+      available: false
+    },
+    {
+      id: 'season4_z',
+      community: 'zeke',
+      title: 'Season 4: No Turning Back',
+      description: 'Zeke’s choices catch up with him — success or destruction?',
+      episodes: 10,
+      thumbnail: null,
+      gradient: 'from-emerald-400 to-green-600',
+      available: false
+    },
+    {
+      id: 'season5_z',
+      community: 'zeke',
+      title: 'Season 5: Redemption Arc',
+      description: 'A comeback story — love, loss, growth, and Zeke’s final evolution',
+      episodes: 10,
+      thumbnail: null,
+      gradient: 'from-yellow-400 to-amber-500',
+      available: false
     }
   ];
+
+  // Map communityId from CommunitiesExplorer to a tag
+  const communityTag =
+    communityId === 'zekes-life' ? 'zeke' :
+    communityId === 'casseys-life' ? 'cassey' :
+    null; // if null, show all (fallback / debug)
+
+  const visibleSeasons = communityTag
+    ? seasons.filter(season => season.community === communityTag)
+    : seasons;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#ffdee9] via-[#fbc2eb] to-[#b5fffc] p-6 font-sans">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-8">
-          <button
-            onClick={onBack}
-            className="px-4 py-2 bg-white/20 backdrop-blur-sm text-white rounded-full hover:bg-white/30 transition-all flex items-center gap-2 font-semibold"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Communities
-          </button>
-          <div className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-white font-semibold">
-            👤 {username}
-          </div>
-        </div>
+        <button
+          onClick={onBack}
+          className="px-4 py-2 bg-white/20 backdrop-blur-sm text-white rounded-full hover:bg-white/30 transition-all flex items-center gap-2 font-semibold"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Communities
+        </button>
+
+        <button
+          onClick={onLogout}
+          title="Logout and save progress"
+          className="group bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-white font-semibold hover:bg-white/30 transition-all flex items-center gap-2"
+        >
+          <span>👤 {username}</span>
+          <LogOut className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+        </button>
+      </div>
 
         <div className="text-center mb-12">
           <h1 className="text-5xl font-bold text-white mb-3 drop-shadow-lg">
@@ -847,7 +1024,7 @@ const SeasonsSelection = ({ onSelectSeason, onBack, username }) => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {seasons.map((season) => (
+          {visibleSeasons.map((season) => (
             <div
               key={season.id}
               className={`bg-white rounded-2xl shadow-xl overflow-hidden transform transition-all duration-300 ${
@@ -899,6 +1076,12 @@ const SeasonsSelection = ({ onSelectSeason, onBack, username }) => {
               </div>
             </div>
           ))}
+
+          {visibleSeasons.length === 0 && (
+            <div className="col-span-full text-center text-white text-lg font-semibold">
+              No seasons available yet for this story.
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -1072,12 +1255,13 @@ export default function App() {
   const [showDashboard, setShowDashboard] = useState(false);
   const [showCommunities, setShowCommunities] = useState(false);
   const [selectedCommunity, setSelectedCommunity] = useState(null);
-  const [sceneId, setSceneId] = useState('seasons');
+  const [sceneId, setSceneId] = useState('communities');
   const [selectedSeason, setSelectedSeason] = useState(null);
   const [selectedEpisode, setSelectedEpisode] = useState(null);
   const [journal, setJournal] = useState([]);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [persistentMessages, setPersistentMessages] = useState({});
+  const [hasProgress, setHasProgress] = useState(false);
 
   const styles = `
     @keyframes gradient {
@@ -1129,40 +1313,94 @@ export default function App() {
   `;
 
   const handleLogin = (username) => {
-    setCurrentUser(username);
-    setShowDashboard(true);
-  };
+  setCurrentUser(username);
+
+  const saved = loadProgress(username);
+  console.log('Loaded progress for', username, saved);
+
+  if (saved) {
+    // Restore scene and selections from storage
+    setSceneId(saved.sceneId || 'communities');
+
+    // You re-hydrate selectedCommunity *later* when you know your communities list,
+    // so for now just keep the ID around:
+    // e.g. you can store a separate state for selectedCommunityId if needed.
+
+    // If you already store IDs in state:
+    setSelectedCommunity(saved.selectedCommunityId || null);
+    setSelectedSeason(saved.selectedSeasonId || null);
+    setSelectedEpisode(saved.selectedEpisodeId || null);
+
+    setHasProgress(true);
+  } else {
+    // No saved progress -> fresh dashboard
+    setSceneId('communities');
+    // setSelectedCommunity(null);
+    setSelectedSeason(null);
+    setSelectedEpisode(null);
+    setHasProgress(false);
+  }
+
+  setShowDashboard(true);
+};
 
   const handleLogout = () => {
-    setCurrentUser(null);
-    setShowDashboard(false);
-    setShowCommunities(false);
-    setSelectedCommunity(null);
-    setSceneId('seasons');
+  if (currentUser) {
+    // Only mark as progress if user actually started something
+    const canContinue = !!(selectedCommunity && selectedSeason && selectedEpisode);
+
+    if (canContinue) {
+      saveProgress(currentUser, {
+        sceneId,
+        // store IDs, not full objects (safer to rehydrate later)
+        selectedCommunityId: selectedCommunity?.id ?? null,
+        selectedSeasonId: selectedSeason ?? null,
+        selectedEpisodeId: selectedEpisode ?? null,
+      });
+      setHasProgress(true);
+    } else {
+      // No real story yet -> clear any old progress
+      localStorage.removeItem(PROGRESS_KEY(currentUser));
+      setHasProgress(false);
+    }
+  }
+
+  // Reset in-memory state
+  setCurrentUser(null);
+  setShowDashboard(false);
+  setShowCommunities(false);
+  setSelectedCommunity(null);
+  setSceneId('communities');
+  setSelectedSeason(null);
+  setSelectedEpisode(null);
+  setJournal([]);
+  setPersistentMessages({});
+};
+
+  const handleResetAccount = () => {
+  if (window.confirm('Are you sure?')) {
+    setSceneId('communities');
     setSelectedSeason(null);
     setSelectedEpisode(null);
     setJournal([]);
-    setPersistentMessages({});
-  };
+    setShowDashboard(false);
+    setShowCommunities(false);
+    setSelectedCommunity(null);
+  }
+};
 
-  const handleResetAccount = () => {
-    if (window.confirm('Are you sure you want to start fresh? This will reset all your progress.')) {
-      setSceneId('seasons');
-      setSelectedSeason(null);
-      setSelectedEpisode(null);
-      setJournal([]);
-      setShowDashboard(false);
-      setShowCommunities(false);
-      setSelectedCommunity(null);
-    }
-  };
 
   const handleContinue = () => {
-    setShowDashboard(false);
-    if (!selectedSeason) {
-      setSceneId('seasons');
-    }
-  };
+  // Just resume whatever sceneId was saved/loaded
+  setShowDashboard(false);
+
+  // OPTIONAL safety fallback if you want:
+  // if (!sceneId) {
+  //   if (selectedEpisode) setSceneId(selectedEpisode);
+  //   else if (selectedSeason) setSceneId('episodes');
+  //   else setSceneId('seasons');
+  // }
+};
 
   const handleExploreCommunities = () => {
     setShowDashboard(false);
@@ -1172,12 +1410,38 @@ export default function App() {
   const handleSelectCommunity = (community) => {
     setSelectedCommunity(community);
     setShowCommunities(false);
+    
+    if (community.id === 'zekes-life') {
+      setSelectedSeason('season1_z');
+    } 
+    else if (community.id === 'casseys-life') {
+      setSelectedSeason('season1');
+    }
+
     setSceneId('seasons');
-  };
+};
+const handleBackToCommunity = () => {
+  // Go back to the communities list
+  setShowCommunities(true);
+
+  // Leave any season or episode view
+  setSceneId(null);
+  setSelectedSeason(null);
+  setSelectedEpisode(null);
+
+  // Reset journal for the new context
+  setJournal([]);
+
+  // This is important:
+  // DO NOT clear selectedCommunity here!
+  // Clearing it forces the app to load Cassey's by default.
+  // We keep selectedCommunity because the user is still "inside" that community
+  // unless they intentionally navigate away.
+};
 
   const handleBackToDashboard = () => {
   setShowDashboard(true);
-  setSceneId('seasons');
+  setSceneId('dashboard');
   setSelectedSeason(null);
   setSelectedEpisode(null);
 };
@@ -1188,16 +1452,303 @@ export default function App() {
   };
 
   const handleBackToSeasons = () => {
-    setSceneId('seasons');
-    setSelectedEpisode(null);
-  };
+  // Always stay inside current community
+  if (!selectedCommunity) return; // safety guard
+
+  setSceneId('seasons');
+  setSelectedEpisode(null);
+
+  // Reset the episode-level journal only
+  setJournal([]);
+
+  // Make sure season resets (but community stays)
+  setSelectedSeason(null);
+};
 
   const handleSelectEpisode = (episodeId) => {
     setSelectedEpisode(episodeId);
-    setSceneId('scene1');
+    if (episodeId === 'zeke-ep1') {
+    setSceneId('scene1_z');
+    } 
+    else if (episodeId === 'zeke-ep2') {
+      setSceneId('scene1_z2');
+    }
+    else if (episodeId === 'episode1') {
+      setSceneId('scene1');
+    }
+    else {
+      setSceneId('scene2');
+    }
+
   };
 
   const scenarios = {
+    scene1_z2: {
+      npc: { name: 'Zeke', role: 'Gamer Engineer', avatar: '🎮' },
+      prompt: "💰 Zeke wins the lottery — $5 million, just like that. He’s overwhelmed, tempted, and more visible than ever.",
+      choices: [
+        {
+          outcome: 'flashlife',
+          label: '💸 Flex hard',
+          description: 'Fast cars, watches, designer everything',
+          emoji: '💸',
+          journalEntry: "I’m done being broke. Time to live like a boss."
+        },
+        {
+          outcome: 'lowkey',
+          label: '🧢 Keep it secret',
+          description: 'Pretend he’s still broke',
+          emoji: '🧢',
+          journalEntry: "They don’t need to know. I’ll move in silence."
+        },
+        {
+          outcome: 'romance',
+          label: '💞 Invest in a girl he just met',
+          description: 'She’s beautiful, mysterious, and might change his life',
+          emoji: '💞',
+          journalEntry: "She might be the real risk. Or the reward."
+        }
+      ]
+    },
+    scene2_z2_flashlife: {
+      npc: { name: 'Zeke', role: 'Millionaire', avatar: '💰' },
+      prompt: "💸 Zeke lives wild — luxury, attention, chaos. Everyone wants a piece, and he’s losing control fast.",
+      choices: [
+        { outcome: 'pimp', label: '🔥 Start running girls and parties', description: 'A dangerous “business” move', emoji: '🔥', journalEntry: "It’s risky, but the money’s crazy." },
+        { outcome: 'downward', label: '💊 Fall deeper into the lifestyle', description: 'The spiral begins', emoji: '💊', journalEntry: "Too fast. Too much. Too late." }
+      ]
+    },
+
+    scene2_z2_lowkey: {
+      npc: { name: 'Zeke', role: 'Secret Millionaire', avatar: '🧢' },
+      prompt: "🧢 Zeke hides his win, keeps working. But friends start getting suspicious — how long can he lie?",
+      choices: [
+        { outcome: 'exposed', label: '🧠 Trust no one', description: 'Hide the truth completely', emoji: '🧠', journalEntry: "No one can know. Not even family." },
+        { outcome: 'betrayal', label: '💬 Tell one person', description: 'Confide in someone close', emoji: '💬', journalEntry: "I needed someone to talk to. Maybe that was a mistake." }
+      ]
+    },
+
+    scene2_z2_romance: {
+      npc: { name: 'Maya', role: 'Aspiring Designer', avatar: '💋' },
+      prompt: "💞 Zeke meets Maya, a woman who gets him. She’s broke, bold, and full of dreams. He sees himself in her.",
+      choices: [
+        { outcome: 'trust', label: '❤️ Go all-in', description: 'Love and money, no limits', emoji: '❤️', journalEntry: "She’s worth it. I think." },
+        { outcome: 'doubt', label: '💡 Keep it casual', description: 'Invest but stay guarded', emoji: '💡', journalEntry: "She’s amazing — but I’ve seen how fast things turn fake." }
+      ]
+    },
+    scene3_z2_pimp: {
+      npc: { name: 'Zeke', role: 'Underground Boss', avatar: '😈' },
+      prompt: "🔥 Zeke starts running private parties for high rollers — fast money, fake friends, real danger.",
+      choices: [
+        { outcome: 'escape', label: '⚖️ Get out before it’s too late', description: 'Leave the streets alive', emoji: '⚖️', journalEntry: "This isn’t me anymore. I want out." },
+        { outcome: 'boss', label: '💀 Go all-in', description: 'Become king of the underground', emoji: '💀', journalEntry: "They fear me now. Maybe that’s enough." }
+      ]
+    },
+
+    scene3_z2_downward: {
+      npc: { name: 'Zeke', role: 'Burned Out', avatar: '🥀' },
+      prompt: "💊 The high life burns fast. Zeke spirals — broke, paranoid, alone.",
+      choices: [
+        { outcome: 'rebuild', label: '💭 Try to rebuild', description: 'Redemption arc', emoji: '💭', journalEntry: "Maybe there’s still time to fix this." },
+        { outcome: 'collapse', label: '🕳️ Keep running', description: 'Lose it all', emoji: '🕳️', journalEntry: "There’s no way out. Only down." }
+      ]
+    },
+
+    scene3_z2_exposed: {
+      npc: { name: 'Zeke', role: 'Target', avatar: '🎯' },
+      prompt: "💣 Someone leaked his win. Friends, family, strangers — everyone wants a piece.",
+      choices: [
+        { outcome: 'shootout', label: '🔫 Confront the stalker', description: 'Fight back', emoji: '🔫', journalEntry: "If they want war, they’ll get it." },
+        { outcome: 'runaway', label: '🚗 Disappear', description: 'Start over somewhere new', emoji: '🚗', journalEntry: "Time to vanish. No more mistakes." }
+      ]
+    },
+
+    scene3_z2_betrayal: {
+      npc: { name: 'Zeke', role: 'Betrayed', avatar: '🕳️' },
+      prompt: "💔 The person he trusted sold him out. Robbed of cash and peace.",
+      choices: [
+        { outcome: 'revenge', label: '🔥 Get revenge', description: 'Make them pay', emoji: '🔥', journalEntry: "They messed with the wrong one." },
+        { outcome: 'reset', label: '🧘 Let it go', description: 'Walk away and rebuild', emoji: '🧘', journalEntry: "Peace beats pride." }
+      ]
+    },
+
+    scene3_z2_trust: {
+      npc: { name: 'Maya', role: 'Partner', avatar: '💋' },
+      prompt: "❤️ Zeke and Maya become inseparable — love, chaos, and luxury. Then one day, she vanishes.",
+      choices: [
+        { outcome: 'chase', label: '🕵️ Track her down', description: 'Find her, whatever it takes', emoji: '🕵️', journalEntry: "If she’s in danger, I’ll save her. If not… I’ll find out." },
+        { outcome: 'heartbreak', label: '💔 Let her go', description: 'Walk away for good', emoji: '💔', journalEntry: "She was never mine to keep." }
+      ]
+    },
+
+    scene3_z2_doubt: {
+      npc: { name: 'Maya', role: 'Partner', avatar: '💋' },
+      prompt: "💡 Zeke keeps things casual, but Maya senses he’s hiding something. When she finds out about the money, everything explodes.",
+      choices: [
+        { outcome: 'confession', label: '💬 Tell her everything', description: 'Honesty or chaos', emoji: '💬', journalEntry: "The truth always costs something." },
+        { outcome: 'cutoff', label: '🚪 End it now', description: 'Walk before it breaks him', emoji: '🚪', journalEntry: "She’s too much. I’m done." }
+      ]
+    },
+    scene4_z2_boss: {
+      npc: null,
+      prompt: "🎬 ENDING: Zeke becomes a legend — feared, rich, untouchable. Until betrayal hits.",
+      choices: []
+    },
+    scene4_z2_escape: {
+      npc: null,
+      prompt: "🎬 ENDING: He leaves the game with nothing but his life. Freedom costs everything.",
+      choices: []
+    },
+    scene4_z2_rebuild: {
+      npc: null,
+      prompt: "🎬 ENDING: He rebuilds from the ground up — sober, broke, wiser.",
+      choices: []
+    },
+    scene4_z2_collapse: {
+      npc: null,
+      prompt: "🎬 ENDING: The fall is fast, and final.",
+      choices: []
+    },
+    scene4_z2_shootout: {
+      npc: null,
+      prompt: "🎬 ENDING: A gunfight in an alley — Zeke survives, barely.",
+      choices: []
+    },
+    scene4_z2_runaway: {
+      npc: null,
+      prompt: "🎬 ENDING: He disappears. New name, new life, same ghosts.",
+      choices: []
+    },
+    scene4_z2_revenge: {
+      npc: null,
+      prompt: "🎬 ENDING: Zeke gets payback — but loses himself completely.",
+      choices: []
+    },
+    scene4_z2_reset: {
+      npc: null,
+      prompt: "🎬 ENDING: He walks away. Peace over pride.",
+      choices: []
+    },
+    scene4_z2_chase: {
+      npc: null,
+      prompt: "🎬 ENDING: He finds her — love, danger, and betrayal collide in one last night.",
+      choices: []
+    },
+    scene4_z2_heartbreak: {
+      npc: null,
+      prompt: "🎬 ENDING: He loses her, but gains peace.",
+      choices: []
+    },
+    scene4_z2_confession: {
+      npc: null,
+      prompt: "🎬 ENDING: The truth breaks them — or maybe saves them both.",
+      choices: []
+    },
+    scene4_z2_cutoff: {
+      npc: null,
+      prompt: "🎬 ENDING: Zeke walks away — she’s the one story he can’t forget.",
+      choices: []
+    },
+    scene1_z: {
+      npc: { name: 'Zeke', role: 'Mechanical Engineer', avatar: '👨‍🔧' },
+      prompt: "🎓 Zeke just graduated with a degree in Mechanical Engineering. Family’s proud, friends are hyped — but he has no job lined up. His controller is calling, but so is real life.",
+      choices: [
+        { outcome: 'mechanic', label: '🔧 Take a job at a local car shop', description: 'Work as a mechanic', emoji: '🔧', journalEntry: "Started working at the shop. Not glamorous, but it’s a start." },
+        { outcome: 'startup', label: '💡 Try starting his own tech-mech startup', description: 'Go all-in on innovation', emoji: '💡', journalEntry: "Risking it all to build something big." },
+        { outcome: 'basement', label: '🎮 Take a “short break” gaming in his dad’s basement', description: 'Procrastinate with purpose', emoji: '🎮', journalEntry: "Just gaming for a bit… what’s the worst that could happen?" }
+      ]
+    },
+    scene2_z_mechanic: {
+      npc: { name: 'Boss', role: 'Shop Owner', avatar: '👨‍🔧' },
+      prompt: "🔧 Zeke starts working at a small auto repair shop. It’s honest work — long hours, greasy hands, good people. But he’s starting to feel stuck.",
+      choices: [
+        { outcome: 'owner', label: '🧰 Stick with it and aim to open his own garage', description: 'Play the long game', emoji: '🧰', journalEntry: "Grinding for my own future garage." },
+        { outcome: 'mods', label: '🔋 Use his engineering skills to design car mods', description: 'Get creative and innovative', emoji: '🔋', journalEntry: "Started tinkering with custom car mods. This could be something big." }
+      ]
+    },
+
+    scene2_z_startup: {
+      npc: { name: 'Investor', role: 'Angel Investor', avatar: '💼' },
+      prompt: "💡 Zeke pitches a startup idea — smart tools for mechanics. Investors like it, but funds are tight. He’s burning through savings fast.",
+      choices: [
+        { outcome: 'pitch', label: '🚀 Double down and chase funding', description: 'Go all-in for investors', emoji: '🚀', journalEntry: "Flying to meet VCs. Sleep is optional." },
+        { outcome: 'freelance', label: '⚙️ Take freelance gigs to survive', description: 'Balance passion and stability', emoji: '⚙️', journalEntry: "Freelancing to keep my dream alive." }
+      ]
+    },
+
+    scene2_z_basement: {
+      npc: { name: 'Dad', role: 'Father', avatar: '👨‍🦳' },
+      prompt: "🎮 Zeke moves back home, saying it’s 'temporary.' Days turn into weeks. He games, applies to jobs, and questions everything.",
+      choices: [
+        { outcome: 'focus', label: '🎯 Get serious about job hunting', description: 'Time to face reality', emoji: '🎯', journalEntry: "Enough gaming. Gotta lock in and find something real." },
+        { outcome: 'stream', label: '🕹️ Start streaming his gameplay', description: 'Turn gaming into a side hustle', emoji: '🕹️', journalEntry: "Streaming for fun — maybe this could go somewhere?" }
+      ]
+    },
+    scene3_z_mechanic_owner: {
+      npc: { name: 'Customer', role: 'Regular Client', avatar: '🚗' },
+      prompt: "🧰 Zeke saves up and opens 'Zeke’s Auto & Performance.' Business is slow, but steady. He’s proud, but tired.",
+      choices: [
+        { outcome: 'expand', label: '🧠 Hire a team and expand', description: 'Go big or go home', emoji: '🧠', journalEntry: "Thinking about hiring help. Time to scale up." },
+        { outcome: 'special', label: '🛠️ Stay small and specialize in high-end repairs', description: 'Quality over quantity', emoji: '🛠️', journalEntry: "Going niche — fewer cars, more quality." }
+      ]
+    },
+
+    scene3_z_mechanic_mods: {
+      npc: { name: 'Fan', role: 'Online Supporter', avatar: '💬' },
+      prompt: "💻 Zeke starts designing custom engine parts using 3D software. Online forums love his work.",
+      choices: [
+        { outcome: 'store', label: '💻 Launch an online store', description: 'Monetize the mods', emoji: '💻', journalEntry: "Building an online shop for my designs." },
+        { outcome: 'compete', label: '🏎️ Enter car shows and competitions', description: 'Prove himself on the stage', emoji: '🏎️', journalEntry: "Signed up for a car mod show. Time to show off my work." }
+      ]
+    },
+
+    scene3_z_startup_pitch: {
+      npc: { name: 'Investor', role: 'Venture Capitalist', avatar: '💰' },
+      prompt: "🚀 Zeke lands a small investor, but pressure skyrockets. He’s coding, designing, managing — all on fumes.",
+      choices: [
+        { outcome: 'pivot', label: '💡 Pivot the product to target garages directly', description: 'Change direction', emoji: '💡', journalEntry: "Pivoting toward real mechanics. Let’s make this practical." },
+        { outcome: 'pause', label: '😔 Take a break before burning out', description: 'Step back before breaking down', emoji: '😔', journalEntry: "Gotta breathe. Can’t innovate if I crash." }
+      ]
+    },
+
+    scene3_z_startup_freelance: {
+      npc: { name: 'Client', role: 'Corporate Contact', avatar: '📈' },
+      prompt: "⚙️ Zeke takes mechanical design contracts. It’s steady but boring — until one client wants to license his idea.",
+      choices: [
+        { outcome: 'sell', label: '🧾 Sell the concept', description: 'Cash out now', emoji: '🧾', journalEntry: "Thinking about selling my idea. Quick money or long game?" },
+        { outcome: 'keep', label: '🧠 Keep ownership and build it slowly', description: 'Play the long-term strategy', emoji: '🧠', journalEntry: "Keeping my idea. This is my legacy." }
+      ]
+    },
+
+    scene3_z_basement_focus: {
+      npc: { name: 'Recruiter', role: 'HR Rep', avatar: '👩‍💼' },
+      prompt: "💼 Zeke lands interviews but keeps second-guessing himself. Every rejection feels heavier.",
+      choices: [
+        { outcome: 'job', label: '💼 Keep applying and stay persistent', description: 'Persistence pays', emoji: '💼', journalEntry: "Still applying. Gotta believe something will land." },
+        { outcome: 'pivot', label: '🧩 Decide to change industries completely', description: 'Try something new', emoji: '🧩', journalEntry: "Maybe engineering isn’t my only path. Thinking about game design." }
+      ]
+    },
+
+    scene3_z_basement_stream: {
+      npc: { name: 'Viewer', role: 'Subscriber', avatar: '💻' },
+      prompt: "🎬 Zeke starts streaming for fun — people actually like his commentary and car knowledge. His channel grows fast.",
+      choices: [
+        { outcome: 'full', label: '🎬 Go full-time as a gaming creator', description: 'Take the content path', emoji: '🎬', journalEntry: "Streaming full-time. Never thought this would blow up." },
+        { outcome: 'mix', label: '🔧 Blend gaming with car repair tutorials', description: 'Create something unique', emoji: '🔧', journalEntry: "Mixing gaming and mechanics — my two worlds collide." }
+      ]
+    },
+    scene4_z_mechanic_expand: { npc: null, prompt: "🎬 ENDING: Zeke builds a full team. 'Zeke’s Garage' becomes a trusted local name. He learns that leadership is harder than labor, but worth it.", choices: [] },
+    scene4_z_mechanic_special: { npc: null, prompt: "🎬 ENDING: Zeke stays small but earns fame in the tuner world. Passion over profit — the grind pays off.", choices: [] },
+    scene4_z_mods_store: { npc: null, prompt: "🎬 ENDING: His online custom parts shop explodes. Zeke becomes the gamer engineer-turned-innovator.", choices: [] },
+    scene4_z_mods_compete: { npc: null, prompt: "🎬 ENDING: Zeke wins a national car mod competition. Recognition, finally — and the respect of his peers.", choices: [] },
+    scene4_z_startup_pivot: { npc: null, prompt: "🎬 ENDING: Zeke pivots smart, nails product-market fit, and lands a big client. Smart risks pay off.", choices: [] },
+    scene4_z_startup_pause: { npc: null, prompt: "🎬 ENDING: Zeke steps back, recharges, and comes back stronger. Success takes patience.", choices: [] },
+    scene4_z_startup_sell: { npc: null, prompt: "🎬 ENDING: Zeke sells his concept — not rich, but debt-free and experienced.", choices: [] },
+    scene4_z_startup_keep: { npc: null, prompt: "🎬 ENDING: He builds slow, steady, and sustainably — no shortcuts, just progress.", choices: [] },
+    scene4_z_basement_job: { npc: null, prompt: "🎬 ENDING: Persistence pays. Zeke lands his first engineering job — his journey begins for real.", choices: [] },
+    scene4_z_basement_pivot: { npc: null, prompt: "🎬 ENDING: Zeke shifts to game design — mechanical mind, digital heart.", choices: [] },
+    scene4_z_stream_full: { npc: null, prompt: "🎬 ENDING: 'The Mechanic Gamer' becomes a viral hit. Zeke turns fun into fortune.", choices: [] },
+    scene4_z_stream_mix: { npc: null, prompt: "🎬 ENDING: Zeke blends gaming and mechanics — millions tune in for his unique style. He’s finally found balance.", choices: [] },
     scene1: {
       npc: { name: 'Cassey', role: 'Recent Graduate', avatar: '👩‍💼' },
       prompt: "🎓 Cassey (22) just graduated with a journalism degree in Chicago. She's staring at her cracked phone, weighing three impossible paths:\n\n1. Move to Minnesota with her pothead boyfriend.\n2. Return to Connecticut to live with her abusive mom and work in the family bakery.\n3. Stay in Chicago and take a $32k newsroom job.\n\nWhat should Cassey do?",
@@ -1476,70 +2027,160 @@ export default function App() {
     if (choice && choice.journalEntry) {
       setJournal(prev => [...prev, choice.journalEntry]);
     }
-    
-    // Navigate to next scene based on current scene and choice
+
+    // =========================
+    // CASSEY PATH
+    // =========================
     if (sceneId === 'scene1') {
+      // scene1 -> scene2_minnesota / scene2_connecticut / scene2_chicago
       setSceneId(`scene2_${outcome}`);
-    } else if (sceneId.startsWith('scene2_')) {
+      return;
+    } else if (
+      sceneId.startsWith('scene2_') &&
+      !sceneId.startsWith('scene2_z_') &&
+      !sceneId.startsWith('scene2_z2_')
+    ) {
+      // scene2_<location> -> scene3_<location>_<outcome>
       const location = sceneId.replace('scene2_', '');
       setSceneId(`scene3_${location}_${outcome}`);
-    } else if (sceneId.startsWith('scene3_')) {
+      return;
+    } else if (
+      sceneId.startsWith('scene3_') &&
+      !sceneId.startsWith('scene3_z_') &&
+      !sceneId.startsWith('scene3_z2_')
+    ) {
+      // scene3_<path> -> scene4_<path>_<outcome>
       const path = sceneId.replace('scene3_', '');
       setSceneId(`scene4_${path}_${outcome}`);
+      return;
     }
-  };
+
+    // =========================
+    // ZEKE EPISODE 1 (scene1_z)
+    // =========================
+    if (sceneId === 'scene1_z') {
+      // scene1_z -> scene2_z_mechanic / scene2_z_startup / scene2_z_basement
+      setSceneId(`scene2_z_${outcome}`);
+      return;
+    } else if (sceneId.startsWith('scene2_z_')) {
+      // scene2_z_<path> -> scene3_z_<path>_<outcome>
+      // e.g. scene2_z_mechanic + 'owner' -> scene3_z_mechanic_owner
+      const path = sceneId.replace('scene2_z_', '');
+      setSceneId(`scene3_z_${path}_${outcome}`);
+      return;
+    } else if (sceneId.startsWith('scene3_z_')) {
+      // Map each scene3_z_* + outcome -> correct scene4_z_* id
+      let nextId = null;
+
+      if (sceneId === 'scene3_z_mechanic_owner') {
+        if (outcome === 'expand') nextId = 'scene4_z_mechanic_expand';
+        if (outcome === 'special') nextId = 'scene4_z_mechanic_special';
+      } else if (sceneId === 'scene3_z_mechanic_mods') {
+        if (outcome === 'store') nextId = 'scene4_z_mods_store';
+        if (outcome === 'compete') nextId = 'scene4_z_mods_compete';
+      } else if (sceneId === 'scene3_z_startup_pitch') {
+        if (outcome === 'pivot') nextId = 'scene4_z_startup_pivot';
+        if (outcome === 'pause') nextId = 'scene4_z_startup_pause';
+      } else if (sceneId === 'scene3_z_startup_freelance') {
+        if (outcome === 'sell') nextId = 'scene4_z_startup_sell';
+        if (outcome === 'keep') nextId = 'scene4_z_startup_keep';
+      } else if (sceneId === 'scene3_z_basement_focus') {
+        if (outcome === 'job') nextId = 'scene4_z_basement_job';
+        if (outcome === 'pivot') nextId = 'scene4_z_basement_pivot';
+      } else if (sceneId === 'scene3_z_basement_stream') {
+        if (outcome === 'full') nextId = 'scene4_z_stream_full';
+        if (outcome === 'mix') nextId = 'scene4_z_stream_mix';
+      }
+
+      if (nextId) {
+        setSceneId(nextId);
+      }
+      return;
+    }
+
+    // =========================
+    // ZEKE EPISODE 2 (scene1_z2)
+    // =========================
+    if (sceneId === 'scene1_z2') {
+      // scene1_z2 -> scene2_z2_flashlife / scene2_z2_lowkey / scene2_z2_romance
+      setSceneId(`scene2_z2_${outcome}`);
+      return;
+    } else if (sceneId.startsWith('scene2_z2_')) {
+      // scene2_z2_* -> scene3_z2_<outcome>
+      // e.g. from scene2_z2_flashlife + 'pimp' -> scene3_z2_pimp
+      setSceneId(`scene3_z2_${outcome}`);
+      return;
+    } else if (sceneId.startsWith('scene3_z2_')) {
+      // scene3_z2_* -> scene4_z2_<outcome>
+      // e.g. scene3_z2_pimp + 'escape' -> scene4_z2_escape
+      setSceneId(`scene4_z2_${outcome}`);
+      return;
+    }
+};
 
   // LOGIN VIEW
+  // const hasProgress = !!(selectedEpisode || selectedSeason);
   if (!currentUser) {
-    return <LoginScreen onLogin={handleLogin} />;
-  }
+  return <LoginScreen onLogin={handleLogin} />;
+}
 
-  // DASHBOARD VIEW
-  if (showDashboard) {
-    return (
-      <PostLoginDashboard
-        username={currentUser}
-        onResetAccount={handleResetAccount}
-        onContinue={handleContinue}
-        onExploreCommunities={handleExploreCommunities}
-        onLogout={handleLogout}
-      />
-    );
-  }
+if (showDashboard) {
+  return (
+    <PostLoginDashboard
+      username={currentUser}
+      onResetAccount={handleResetAccount}
+      onContinue={handleContinue}
+      onExploreCommunities={handleExploreCommunities}
+      onLogout={handleLogout}
+      hasProgress={hasProgress}
+    />
+  );
+}
 
-  // COMMUNITIES EXPLORER VIEW
-  if (showCommunities) {
-    return (
-      <CommunitiesExplorer
-        username={currentUser}
-        onBack={() => setShowDashboard(true)}
-        onSelectCommunity={handleSelectCommunity}
-      />
-    );
-  }
+if (showCommunities && currentUser) {
+  return (
+    <CommunitiesExplorer
+      username={currentUser}
+      onBack={() => {
+        setShowCommunities(false);
+        setShowDashboard(true);
+      }}
+      onSelectCommunity={handleSelectCommunity}
+      onLogout={handleLogout}      /* ⬅️ add this */
+    />
+  );
+}
 
-  // SEASONS SELECTION VIEW
-  if (sceneId === 'seasons') {
-    return (
-      <SeasonsSelection
-        onSelectSeason={handleSelectSeason}
-        onBack={handleBackToDashboard}
-        username={currentUser}
-      />
-    );
-  }
+if (sceneId === 'seasons') {
+  return (
+    <SeasonsSelection
+      onSelectSeason={handleSelectSeason}
+      onBack={() => {
+        // setSelectedCommunity(null);
+        setShowCommunities(true);
+      }}
+      username={currentUser}
+      communityId={selectedCommunity?.id}
+      onLogout={handleLogout}      /* ⬅️ add this */
+    />
+  );
+}
 
-  // EPISODES SELECTION VIEW
-  if (sceneId === 'episodes') {
-    return (
-      <EpisodesSelection
-        seasonId={selectedSeason}
-        onSelectEpisode={handleSelectEpisode}
-        onBack={handleBackToSeasons}
-        username={currentUser}
-      />
-    );
-  }
+if (sceneId === 'episodes') {
+  return (
+    <EpisodesSelection
+      seasonId={selectedSeason}
+      onSelectEpisode={handleSelectEpisode}
+      onBack={() => {
+        //setSceneId('seasons');
+        //setSelectedEpisode(null);
+        handleBackToSeasons();
+      }}
+      username={currentUser}
+      onLogout={handleLogout}      /* ⬅️ add this */
+    />
+  );
+}
 
   // GAME SCENES
   if (scenarios[sceneId]) {
@@ -1556,9 +2197,14 @@ export default function App() {
                 <Compass className="w-5 h-5" />
                 Home
               </button>
-              <div className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-white font-semibold">
-                👤 {currentUser}
-              </div>
+              <button
+                onClick={handleLogout}
+                title="Logout and save progress"
+                className="group bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-white font-semibold hover:bg-white/30 transition-all flex items-center gap-2"
+              >
+                <span>👤 {currentUser}</span>
+                <LogOut className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </button>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
