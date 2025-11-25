@@ -759,6 +759,15 @@ const EpisodesSelection = ({ seasonId, onSelectEpisode, onBack, username, onLogo
         thumbnail: '/assets/cassey-s1e1.gif',
         duration: '15 min',
         available: true
+      },
+      {
+        id: 'episode2',
+        number: 2,
+        title: 'When Plans Change',
+        description: 'An unexpected call changes everything as Cassey faces new opportunities',
+        thumbnail: '/assets/cassey-s1e2.gif',
+        duration: '18 min',
+        available: true
       }
     ],
     'season1_z': [
@@ -2015,8 +2024,279 @@ const handleBackToCommunity = () => {
       npc: null,
       prompt: "🎬 ENDING: Data journalist at a major publication. Cassey combines coding and storytelling. She's making $55K and loving it. She learned that you don't have to choose between passions—you can merge them. She's exactly where she needs to be.",
       choices: []
+    },
+    // ============================================
+    // EPISODE 2 SCENARIOS
+    // ============================================
+    ep2_scene1: {
+      npc: { name: 'Cassey', role: 'Young Professional', avatar: '👩‍💼' },
+      prompt: "📞 It's been a few months since Cassey made her big decision. Things were finally settling and work was finally manageable, even enjouable sometimes... until life decided to stir things up.\n\nCassey's at work when she gets a message that changes everything: Her old mentor from college - or her dream company - wants to meet about an opportunity in another city.\n\nWhat should Cassey do?",
+      choices: [
+        { 
+          outcome: 'opportunity', 
+          label: '💼 Take the interview',
+          description: 'This could change everything',
+          emoji: '💼',
+          journalEntry: "Taking the interview. Time to see what this opportunity is all about."
+        },
+        { 
+          outcome: 'stability', 
+          label: '❤️ Stay where she is',
+          description: 'Things are finally stable',
+          emoji: '❤️',
+          journalEntry: "Staying put. Stability matters right now."
+        },
+        { 
+          outcome: 'suspicion', 
+          label: '🕵️ Ignore it for now',
+          description: 'Something feels off about the timing',
+          emoji: '🕵️',
+          journalEntry: "Something doesn't feel right. Need to investigate first."
+        }
+      ]
+    },
+    ep2_scene2_opportunity: {
+      npc: { name: 'Hiring Manager', role: 'Team Lead', avatar: '👔' },
+      prompt: "✈️ Cassey books the flight and meets the team. They love her — but the job requires moving, and fast.\n\nWhile she's away, something unexpected happens back home: a close friend needs her support. What now?",
+      choices: [
+        { 
+          outcome: 'newcity', 
+          label: '✈️ Accept the offer',
+          description: 'Chase the dream',
+          emoji: '✈️',
+          journalEntry: "Accepting the offer. This is my moment."
+        },
+        { 
+          outcome: 'home', 
+          label: '💬 Go back home',
+          description: 'People matter more than success',
+          emoji: '💬',
+          journalEntry: "Going back home. My friend needs me."
+        }
+      ]
+    },
+    ep2_scene2_stability: {
+      npc: { name: 'Alex', role: 'Old Friend', avatar: '👤' },
+      prompt: "🏡 Cassey stays put. Her life is peaceful, predictable — until an old friend shows up in town. They're changing careers... and they want her help with a bold idea. What's the move?",
+      choices: [
+        { 
+          outcome: 'risk', 
+          label: '🔥 Join them',
+          description: 'Maybe it\'s fate',
+          emoji: '🔥',
+          journalEntry: "Taking a risk with Alex. This could be amazing."
+        },
+        { 
+          outcome: 'safe', 
+          label: '❄️ Politely decline',
+          description: 'Not ready for chaos',
+          emoji: '❄️',
+          journalEntry: "Declining. I need to protect my peace."
+        }
+      ]
+    },
+    ep2_scene2_suspicion: {
+      npc: { name: 'Cassey', role: 'Investigator', avatar: '🔍' },
+      prompt: "🕵️ Cassey hesitates about the 'dream job.' Something about it feels strange.\n\nAfter digging around, she discovers the company's reputation isn't clean — and they're recruiting people fast for a reason. What should she do?",
+      choices: [
+        { 
+          outcome: 'expose', 
+          label: '🕵️ Expose what she found',
+          description: 'Make it public',
+          emoji: '🕵️',
+          journalEntry: "Exposing the truth. People need to know."
+        },
+        { 
+          outcome: 'walkaway', 
+          label: '🙈 Walk away quietly',
+          description: 'Protect herself',
+          emoji: '🙈',
+          journalEntry: "Walking away silently. Sometimes self-preservation comes first."
+        }
+      ]
+    },
+    ep2_scene3_newcity: {
+      npc: { name: 'Jordan', role: 'New Colleague', avatar: '✨' },
+      prompt: "🌆 Cassey moves. The city's exciting — but isolating. Everything's moving fast: new job, new people, new pressure.\n\nThen, she meets someone who challenges her beliefs — in a good way or bad. What happens next?",
+      choices: [
+        { 
+          outcome: 'romance', 
+          label: '💘 Start dating this person',
+          description: 'Maybe this is what she needed',
+          emoji: '💘',
+          journalEntry: "Starting something new. This feels right."
+        },
+        { 
+          outcome: 'focus', 
+          label: '💡 Keep it professional',
+          description: 'Focus on career',
+          emoji: '💡',
+          journalEntry: "Keeping focus on my career. Romance can wait."
+        }
+      ]
+    },
+    ep2_scene3_home: {
+      npc: { name: 'Sam', role: 'Close Friend', avatar: '💙' },
+      prompt: "🏠 Cassey turns down the offer and returns home. Her friend's going through something heavy — mental health, family issues, or burnout — and Cassey's the only one who shows up. What's her approach?",
+      choices: [
+        { 
+          outcome: 'grounded', 
+          label: '❤️ Stay and help',
+          description: 'Learn the power of empathy',
+          emoji: '❤️',
+          journalEntry: "Staying to help Sam. Showing up is what matters."
+        },
+        { 
+          outcome: 'balance', 
+          label: '💭 Encourage professional help',
+          description: 'Move forward with own goals',
+          emoji: '💭',
+          journalEntry: "Helping Sam find support while staying on my path."
+        }
+      ]
+    },
+    ep2_scene3_risk: {
+      npc: { name: 'Alex', role: 'Co-founder', avatar: '🚀' },
+      prompt: "💼 Cassey quits her job to join her friend's new start-up idea — something creative and meaningful.\n\nThe team is small, the hours are brutal, and money is tight. How does she handle it?",
+      choices: [
+        { 
+          outcome: 'breakthrough', 
+          label: '🚀 Go all in',
+          description: 'Try to make it succeed',
+          emoji: '🚀',
+          journalEntry: "All in on the startup. We're making this work."
+        },
+        { 
+          outcome: 'collapse', 
+          label: '🧊 Pull out',
+          description: 'Before it crashes',
+          emoji: '🧊',
+          journalEntry: "Pulling out. Better to cut losses now."
+        }
+      ]
+    },
+    ep2_scene3_safe: {
+      npc: { name: 'Cassey', role: 'Soul Searcher', avatar: '🤔' },
+      prompt: "😌 Cassey keeps her peaceful routine, watching others chase dreams while she plays it safe. But peace starts feeling like boredom. Time for a change?",
+      choices: [
+        { 
+          outcome: 'reset', 
+          label: '🌅 Take a solo trip',
+          description: 'Reignite her spark',
+          emoji: '🌅',
+          journalEntry: "Going on a solo adventure. Time to find myself."
+        },
+        { 
+          outcome: 'restart', 
+          label: '📖 Start something new',
+          description: 'Go back to school or pivot',
+          emoji: '📖',
+          journalEntry: "Starting fresh with something new. Growth time."
+        }
+      ]
+    },
+    ep2_scene3_expose: {
+      npc: { name: 'Reporter', role: 'Journalist', avatar: '📰' },
+      prompt: "🔥 Cassey leaks what she found — an online scandal blows up. She's praised for being brave... but now the company's lawyers are involved. How does she respond?",
+      choices: [
+        { 
+          outcome: 'hero', 
+          label: '⚖️ Stand her ground',
+          description: 'Tell her story publicly',
+          emoji: '⚖️',
+          journalEntry: "Standing up for the truth. No backing down."
+        },
+        { 
+          outcome: 'silence', 
+          label: '😶 Disappear from social media',
+          description: 'Until it blows over',
+          emoji: '😶',
+          journalEntry: "Going dark until this passes. Protecting myself."
+        }
+      ]
+    },
+    ep2_scene3_walkaway: {
+      npc: { name: 'Reporter', role: 'Investigative Journalist', avatar: '📰' },
+      prompt: "🚶‍♀️ She walks away quietly, focusing on herself. Then, a few weeks later, a reporter exposes everything she already knew. She could've been part of it — but she's safe. How does she feel?",
+      choices: [
+        { 
+          outcome: 'peace', 
+          label: '💭 Feel relief',
+          description: 'She dodged a bullet',
+          emoji: '💭',
+          journalEntry: "Relieved I stayed out of it. Self-preservation was right."
+        },
+        { 
+          outcome: 'guilt', 
+          label: '🤔 Regret not speaking up',
+          description: 'Should have said something',
+          emoji: '🤔',
+          journalEntry: "Wish I'd spoken up sooner. Timing and courage matter."
+        }
+      ]
+    },
+    ep2_scene4_romance: {
+      npc: null,
+      prompt: "🎬 ENDING: Love in a new city — unpredictable, messy, but real. Cassey feels alive again. She learned that taking chances on people can be just as important as career risks.",
+      choices: []
+    },
+    ep2_scene4_focus: {
+      npc: null,
+      prompt: "🎬 ENDING: She keeps her head down and earns respect. The risk paid off. Cassey's career is thriving, and she's learned that delayed gratification is powerful.",
+      choices: []
+    },
+    ep2_scene4_grounded: {
+      npc: null,
+      prompt: "🎬 ENDING: Cassey finds strength in showing up for others. Her heart grows. She learned that success isn't just about personal achievement — it's about being there when it matters.",
+      choices: []
+    },
+    ep2_scene4_balance: {
+      npc: null,
+      prompt: "🎬 ENDING: She learns to help without losing herself — maturity in motion. Cassey discovered the art of caring while maintaining boundaries.",
+      choices: []
+    },
+    ep2_scene4_breakthrough: {
+      npc: null,
+      prompt: "🎬 ENDING: The startup takes off — chaos turns into purpose. Cassey's equity is worth something real now. She learned that calculated risks can transform your life.",
+      choices: []
+    },
+    ep2_scene4_collapse: {
+      npc: null,
+      prompt: "🎬 ENDING: The project fails, but Cassey discovers resilience through failure. She's broke but wiser, and already planning her next move. Failure isn't fatal — it's educational.",
+      choices: []
+    },
+    ep2_scene4_reset: {
+      npc: null,
+      prompt: "🎬 ENDING: The solo trip changes her perspective — peace through movement. Cassey returns home with clarity about what she actually wants. Sometimes you need distance to see clearly.",
+      choices: []
+    },
+    ep2_scene4_restart: {
+      npc: null,
+      prompt: "🎬 ENDING: She reinvents herself — same Cassey, new direction. Going back to school at 23 felt scary, but now she's on a path that excites her. It's never too late to pivot.",
+      choices: []
+    },
+    ep2_scene4_hero: {
+      npc: null,
+      prompt: "🎬 ENDING: Her courage inspires others — but fame brings new challenges. Cassey's dealing with online harassment and legal threats, but she'd do it again. Standing up matters.",
+      choices: []
+    },
+    ep2_scene4_silence: {
+      npc: null,
+      prompt: "🎬 ENDING: She hides away, reflecting quietly on how truth and timing collide. Cassey's learning that not every fight is yours to fight — and that's okay.",
+      choices: []
+    },
+    ep2_scene4_peace: {
+      npc: null,
+      prompt: "🎬 ENDING: She's safe, stable, and wiser — not every battle needs to be fought. Cassey chose self-preservation, and sometimes that's the bravest choice.",
+      choices: []
+    },
+    ep2_scene4_guilt: {
+      npc: null,
+      prompt: "🎬 ENDING: She regrets not acting sooner, but learns that fear and growth often walk together. Cassey's processing the lesson that courage and timing don't always align — and that's part of being human.",
+      choices: []
     }
   };
+
 
   const getCurrentNPC = () => scenarios[sceneId]?.npc;
   const getCurrentPrompt = () => scenarios[sceneId]?.prompt;
